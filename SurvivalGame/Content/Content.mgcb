@@ -13,3 +13,21 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin Shaders/BasicShader.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/BasicShader.fx
+
+#begin Shaders/ShaderBlingPhong.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/ShaderBlingPhong.fx
+
+#begin Shaders/SkyBox.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/SkyBox.fx
+

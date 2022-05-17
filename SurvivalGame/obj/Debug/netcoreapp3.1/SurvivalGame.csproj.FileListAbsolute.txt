@@ -22,3 +22,6 @@ E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\obj\Debug\netcoreapp3.1
 E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\obj\Debug\netcoreapp3.1\SurvivalGame.dll
 E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\obj\Debug\netcoreapp3.1\SurvivalGame.pdb
 E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\obj\Debug\netcoreapp3.1\SurvivalGame.genruntimeconfig.cache
+E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\bin\Debug\netcoreapp3.1\Content\Shaders\BasicShader.xnb
+E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\bin\Debug\netcoreapp3.1\Content\Shaders\ShaderBlingPhong.xnb
+E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\bin\Debug\netcoreapp3.1\Content\Shaders\SkyBox.xnb
