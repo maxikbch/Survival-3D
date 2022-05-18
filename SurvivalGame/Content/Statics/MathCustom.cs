@@ -34,5 +34,12 @@ namespace SurvivalGame
             while (number < min) number += varation;
             return number;
         }
+
+        public static bool InIndex(int lenght, int number)
+        {
+            if (number >= lenght) return false;
+            if (number < 0) return false;
+            return true;
+        }
     }
 }

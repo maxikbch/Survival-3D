@@ -22,6 +22,8 @@ float KAmbient;
 float KDiffuse;
 float KSpecular;
 
+float shininess;
+
 float3 lightPosition; // Posicion de la fuente de luz
 float3 eyePosition; // Camera position
 
@@ -116,7 +118,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 
 	// Calculate the specular light
     float NdotH = dot(input.Normal.xyz, halfVector);
-    float3 specularLight = sign(NdotL) * KSpecular * specularColor * saturate(NdotH);
+    float3 specularLight = sign(NdotL) * KSpecular * specularColor * pow(saturate(NdotH), shininess);
     
     // Final calculation
     float4 finalColor = float4(saturate(ambientLight + diffuseLight) * input.Color.rgb + specularLight, input.Color.a);

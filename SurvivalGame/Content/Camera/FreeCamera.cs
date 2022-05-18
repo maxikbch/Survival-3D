@@ -47,8 +47,7 @@ namespace SurvivalGame.Cameras
             ProcessKeyboard(elapsedTime);
             ProcessMouseMovement(elapsedTime);
 
-            if (changed)
-                CalculateView();
+            CalculateView();
         }
 
         private void ProcessKeyboard(float elapsedTime)
@@ -82,6 +81,9 @@ namespace SurvivalGame.Cameras
                 Position += -FrontDirection * currentMovementSpeed * elapsedTime;
                 changed = true;
             }
+
+            if (Keyboard.GetState().IsKeyDown(SKeys.centerFreeCamera))
+                Position *= new Vector3(0, 1, 0);
         }
 
         private void ProcessMouseMovement(float elapsedTime)

@@ -49,7 +49,7 @@ namespace SurvivalGame
         {
             screenSize = new Point(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
             
-            Camera = new FreeCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0, 1, 0), screenSize);
+            Camera = new FreeCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0, 2, 0), screenSize);
 
 
             World = Matrix.Identity;
@@ -66,15 +66,16 @@ namespace SurvivalGame
 
             Effect = Content.Load<Effect>(ShadersFolder + "ShaderBlingPhong");
 
-            Effect.Parameters["lightPosition"].SetValue(new Vector3(0, 1000, 0));
+            Effect.Parameters["lightPosition"].SetValue(new Vector3(250, 250, 0));
 
             Effect.Parameters["ambientColor"].SetValue(Color.White.ToVector3());
             Effect.Parameters["diffuseColor"].SetValue(Color.White.ToVector3());
             Effect.Parameters["specularColor"].SetValue(Color.White.ToVector3());
 
             Effect.Parameters["KAmbient"].SetValue(0.7f);
-            Effect.Parameters["KDiffuse"].SetValue(0.6f);
+            Effect.Parameters["KDiffuse"].SetValue(1f);
             Effect.Parameters["KSpecular"].SetValue(0.3f);
+            Effect.Parameters["shininess"].SetValue(1f);
 
 
             // TODO: use this.Content to load your game content here
@@ -82,7 +83,8 @@ namespace SurvivalGame
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            //GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
+            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
             game.world.Update(gameTime, Vector3.Zero);

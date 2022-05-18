@@ -16,6 +16,8 @@ namespace SurvivalGame
 
         public World world = new World();
 
+        public Player player = new Player();
+
         public GameInstance()
         {
             
