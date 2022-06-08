@@ -13,29 +13,25 @@ namespace SurvivalGame.Elements
     
     public class World
     {
-        int chunkSize = 20;
+        int chunkSize = 10;
         int worldSize;
-        int worldRadio = 100; //MantenerImparidad
+        int worldRadio = 20; //MantenerImparidad
         int visionRange = 3; //RangoDeChunks
         float centration = 0;
         Chunk[,] chunks;
-        Chunk[,] actualChunks;
-        List<TrianglePrimitive> triangles = new List<TrianglePrimitive>();
-        Vector2 lastCenter = Vector2.UnitX;
         Vector2 center;
-        Matrix cubeWorld;
-        CubePrimitive cube;
         public WorldPoint[,] points;
-        public WorldPoint[,] drawPointsMatrix;
-        bool actualiceWorldDraw = true;
-        bool actualiceTriangles = false;
+        public Vector3 to000;
+        public float floorScale = 1f;
 
         public World()
         {
             worldSize = 1 + (worldRadio - 1) * 2;
+            to000 = new Vector3(1, 0, 1) * ((float)((worldSize * chunkSize) - 1) / 2);
             if (MathC.Even(chunkSize)) centration = 0.5f;
             InitChunks();
             InitWorldPoints();
+            InitChunkTriangles();
         }
 
         public void InitChunks()
@@ -53,14 +49,31 @@ namespace SurvivalGame.Elements
         public void InitWorldPoints()
         {
             points = new WorldPoint[chunkSize * worldSize, chunkSize * worldSize];
-            Vector3 to000 = new Vector3(1, 0, 1) * ((float)((worldSize * chunkSize) - 1) / 2);
             for (int i = 0; i < chunkSize * worldSize; i++)
             {
                 for (int j = 0; j < chunkSize * worldSize; j++)
                 {
-                    float y = 2f * MathF.Sin(i * MathF.PI/12) * MathF.Sin(j * MathF.PI / 12);
-                    Vector3 position = new Vector3(i, y, j);
-                    points[i, j] = new WorldPoint(position - to000);
+                    float x = i - to000.X;
+                    float z = j - to000.Z;
+                    float y = 1f * MathF.Sin(x * MathF.PI/12) * MathF.Sin(z * MathF.PI / 12);
+                    Vector3 position = new Vector3(x, y - 1, z);
+                    int chunkX = (int)MathF.Floor(i / chunkSize);
+                    int chunkZ = (int)MathF.Floor(j / chunkSize);
+                    Color color = chunks[chunkX, chunkZ].GetColor();
+                    points[i, j] = new WorldPoint(position, color);
+                }
+            }
+        }
+
+        public void InitChunkTriangles()
+        {
+            for (int i = 0; i < chunkSize * worldSize - 1; i++)
+            {
+                for (int j = 0; j < chunkSize * worldSize - 1; j++)
+                {
+                    int chunkX = (int)MathF.Floor(i / chunkSize);
+                    int chunkZ = (int)MathF.Floor(j / chunkSize);
+                    chunks[chunkX, chunkZ].triangles.AddRange(AddFloorTriangles(SElem.graphicsDevice, SElem.content, i, j));
                 }
             }
         }
@@ -68,49 +81,45 @@ namespace SurvivalGame.Elements
         public void Update(GameTime gameTime, Vector3 playerPosition)
         {
             SetWorldViewCenter(playerPosition);
-            if (actualiceWorldDraw)
-            {
-                SetActualChunks();
-                SetDrawPointsMatrix();
-            }
         }
 
         public void Draw(GraphicsDevice graphicsDevice, ContentManager content, Matrix view, Matrix projection)
         {
-            if (actualiceTriangles)
-            {
-                AddFloorTriangles(graphicsDevice, content);
-                actualiceTriangles = false;
-            }
 
-            Matrix world = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(5f);
-            
-            foreach (TrianglePrimitive triangle in triangles)
-            {
-                triangle.Draw(world, view, projection);
-            }
-
-            cube = new CubePrimitive(graphicsDevice, content);
-            cubeWorld = Matrix.CreateTranslation(Vector3.Zero) * Matrix.CreateScale(10f);
-
-            //cube.Draw(cubeWorld, view, projection);
-        }
-
-        private void SetActualChunks()
-        {
             int range = 1 + (visionRange - 1) * 2;
-            actualChunks = new Chunk[range, range];
-            for (int i = 0; i < range; i++)
+
+            for (int i = (int) center.X - range; i <= (int)center.X + range; i++)
             {
-                for (int j = 0; j < range; j++)
+                for (int j = (int)center.Y - range; j <= (int)center.Y + range; j++)
                 {
-                    if (i - (visionRange - 1) + center.X >= 0 && j - (visionRange -1) + center.Y >= 0)
-                        actualChunks[i, j] = chunks[(int)(i - (visionRange - 1) + center.X), (int)(j - (visionRange - 1) + center.Y)];
-                    else
-                        actualChunks[i, j] = null;
+                    chunks[i, j].Draw(view, projection);
                 }
             }
         }
+
+        public float GetFloorHigh(Vector3 position)
+        {
+            Vector3 pj = position;
+            Vector3 pjRepos = position + to000;
+            Vector3 p1 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
+            Vector3 v1j = p1 - pj;
+            Vector3 n = GetFloorNormal(position);
+            float y = (v1j.X * n.X + v1j.Z * n.Z) / n.Y + p1.Y;
+            return y;
+        }
+
+        public Vector3 GetFloorNormal(Vector3 position)
+        {
+            Vector3 pjRepos = position + to000;
+            Vector3 p1 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
+            Vector3 p2 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
+            Vector3 p3 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
+            Vector3 v12 = (p1 - p2);
+            Vector3 v13 = (p1 - p3);
+            Vector3 n = Vector3.Cross(v12, v13);
+            return n;
+        }
+
 
         private void SetWorldViewCenter(Vector3 playerPosition)
         {
@@ -120,75 +129,36 @@ namespace SurvivalGame.Elements
                 MathF.Floor(_center.X + worldRadio - 1),
                 MathF.Floor(_center.Y + worldRadio - 1));
             center = _center;
-            if (center != lastCenter)
-            {
-                actualiceWorldDraw = true;
-                actualiceTriangles = true;
-            }
-            else
-                actualiceWorldDraw = false;
-            lastCenter = center;
         }
 
-        private void SetDrawPointsMatrix()
+        private List<TrianglePrimitive> AddFloorTriangles(GraphicsDevice graphicsDevice, ContentManager content, int i, int j)
         {
-            int range = 1 + (visionRange - 1) * 2;
-            int size = chunkSize * range;
-            drawPointsMatrix = new WorldPoint[size, size];
-            for (int i = 0; i < size; i++)
-            {
-                for (int j = 0; j < size; j++)
-                {
-                    int x = i + chunkSize * ((int)center.X - visionRange + 1);
-                    int y = j + chunkSize * ((int)center.Y - visionRange + 1);
-                    if (MathC.InIndex(points.Length, x) && MathC.InIndex(points.Length, y))
-                        drawPointsMatrix[i, j] = points[x, y];
-                    else
-                        drawPointsMatrix[i, j] = null;
-                }
-            }
-        }
-
-        private void AddFloorTriangles(GraphicsDevice graphicsDevice, ContentManager content)
-        {
-            int range = 1 + (visionRange - 1) * 2;
-            triangles = new List<TrianglePrimitive>();
-            WorldPoint[,] dm = drawPointsMatrix;
-            for (int i = 0; i < range * chunkSize - 1; i++)
-            {
-                for (int j = 0; j < range * chunkSize - 1; j++)
-                {
-                    if (dm[i, j] != null && dm[i + 1, j + 1] != null) {
-                        if (dm[i + 1, j] != null)
-                        {
-                            /*
-                            triangles.Add(new TrianglePrimitive(graphicsDevice, content,
-                                dm[i, j].position, dm[i + 1, j].position, dm[i + 1, j + 1].position,
-                                dm[i, j].color, dm[i + 1, j].color, dm[i + 1, j + 1].color));
-                            */
-                            triangles.Add(new TrianglePrimitive(graphicsDevice, content,
-                                dm[i + 1, j + 1].position, dm[i + 1, j].position, dm[i, j].position,
-                                dm[i + 1, j + 1].color, dm[i + 1, j].color, dm[i, j].color));
-                        }
-                        if (dm[i, j + 1] != null)
-                        {
-                            triangles.Add(new TrianglePrimitive(graphicsDevice, content,
-                                dm[i, j].position, dm[i, j + 1].position, dm[i + 1, j + 1].position,
-                                dm[i, j].color, dm[i, j + 1].color, dm[i + 1, j + 1].color));
-                        }
-                    }
-                }
-            }
+            List<TrianglePrimitive> triangles = new List<TrianglePrimitive>();
+            triangles.Add(new TrianglePrimitive(graphicsDevice, content,
+                points[i + 1, j + 1].position, points[i + 1, j].position, points[i, j].position,
+                points[i + 1, j + 1].color, points[i + 1, j].color, points[i, j].color));
+            triangles.Add(new TrianglePrimitive(graphicsDevice, content,
+                points[i, j].position, points[i, j + 1].position, points[i + 1, j + 1].position,
+                points[i, j].color, points[i, j + 1].color, points[i + 1, j + 1].color));
+            return triangles;
         }
 
     }
 
     public class Chunk
     {
+        public List<TrianglePrimitive> triangles = new List<TrianglePrimitive>();
+        public Biome biome = Biome.Llanura;
+        public WorldPoint[,] points;
+
+        public Color GetColor()
+        {
+            return biome.color;
+        }
 
         public Chunk(int chunkSize)
         {
-            
+            points = new WorldPoint[chunkSize, chunkSize];
         }
 
         public void Update(GameTime gameTime)
@@ -196,8 +166,13 @@ namespace SurvivalGame.Elements
 
         }
 
-        public void Draw(GameTime gameTime)
+        public void Draw(Matrix view, Matrix projection)
         {
+            Matrix world = Matrix.CreateTranslation(0, 0, 0);
+            foreach (TrianglePrimitive triangle in triangles)
+            {
+                triangle.Draw(world, view, projection);
+            }
         }
 
     }
@@ -205,12 +180,26 @@ namespace SurvivalGame.Elements
     public class WorldPoint
     {
         public Vector3 position;
-        public Color color = Color.Green;
+        public Color color;
 
-        public WorldPoint(Vector3 position)
+        public WorldPoint(Vector3 position, Color color)
         {
             this.position = position;
+            this.color = color;
         }
+
+    }
+
+    public class Biome
+    {
+        public Color color;
+
+        public Biome(Color color)
+        {
+            this.color = color;
+        }
+
+        public static Biome Llanura = new Biome(Color.Green);
 
     }
 }

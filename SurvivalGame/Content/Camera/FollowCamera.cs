@@ -6,35 +6,20 @@ namespace SurvivalGame.Cameras
 {
     internal class FollowCamera : Camera
     {
-        private readonly bool lockMouse;
-
-        private readonly Point screenCenter;
-
-        private Vector2 pastMousePosition;
-        private float pastMouseWheel;
-
         private Vector3 PlayerPosition = Vector3.Zero;
 
         float YaxisAngle = 0;
-        float Yhigh = 0;
-        float Xdistance = 30;
+        float Yhigh = 2;
+        float Xdistance = 3.5f;
 
         private Vector3 AnglePosition;
 
         // Angles
 
-        public FollowCamera(float aspectRatio, Vector3 position, Point screenCenter) : this(aspectRatio, position)
-        {
-            lockMouse = true;
-            this.screenCenter = screenCenter;
-            UpdateCameraVectors();
-        }
-
         public FollowCamera(float aspectRatio, Vector3 position) : base(aspectRatio)
         {
             AnglePosition = new Vector3(-Xdistance, 0, 0);
             Position = position + AnglePosition;
-            pastMousePosition = Mouse.GetState().Position.ToVector2();
             UpdateCameraVectors();
             CalculateView();
         }
@@ -61,50 +46,31 @@ namespace SurvivalGame.Cameras
         public override void Update(GameTime gameTime)
         {
             var elapsedTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            
-            ProcessMouseMovement(elapsedTime);
+
+            ProcessKeyboard(elapsedTime);
 
             Position = AnglePosition + PlayerPosition;
-            Position = new Vector3(Position.X, Math.Max(0, Position.Y), Position.Z);
 
             CalculateView();
         }
 
-        private void ProcessMouseMovement(float elapsedTime)
+        private void ProcessKeyboard(float elapsedTime)
         {
-            MouseState mouseState = Mouse.GetState();
-            if (mouseState.RightButton.Equals(ButtonState.Pressed))
+            var keyboardState = Keyboard.GetState();
+
+            if (keyboardState.IsKeyDown(SKeys.rotateCameraLeft))
             {
-                Vector2 mouseDelta = mouseState.Position.ToVector2() - pastMousePosition;
-                mouseDelta *= MouseSensitivity * elapsedTime;
-
-                float mouseWheelDelta = (Mouse.GetState().ScrollWheelValue - pastMouseWheel) * 0.01f;
-
-                //Position = new Vector3(Position.X - mouseDelta.X, Position.Y, Position.Z);
-                float error = 0.001f;
-                YaxisAngle -= mouseDelta.X * 0.1f;
-                Yhigh = Math.Clamp(Yhigh - mouseDelta.Y * 0.1f, error, 1 - error);
-                Xdistance = Math.Clamp(Xdistance - mouseWheelDelta, 15, 50);
-                float curve = 1 + MathF.Sqrt(-MathF.Pow(Yhigh, 2) + 1);
-                float Odistance = (1 - curve) * Xdistance;
-
-                AnglePosition = new Vector3(Odistance * MathF.Cos(YaxisAngle), Yhigh * Xdistance, Odistance * MathF.Sin(YaxisAngle));
-                
-                UpdateCameraVectors();
-
-                if (lockMouse)
-                {
-                    Mouse.SetPosition(screenCenter.X, screenCenter.Y);
-                    Mouse.SetCursor(MouseCursor.Crosshair);
-                }
-                else
-                {
-                    Mouse.SetCursor(MouseCursor.Arrow);
-                }
+                YaxisAngle += 1f * elapsedTime;
             }
 
-            pastMousePosition = Mouse.GetState().Position.ToVector2();
-            pastMouseWheel = Mouse.GetState().ScrollWheelValue;
+            if (keyboardState.IsKeyDown(SKeys.rotateCameraRight))
+            {
+                YaxisAngle += -1f * elapsedTime;
+            }
+
+            AnglePosition = new Vector3(Xdistance * MathF.Cos(YaxisAngle), Yhigh, Xdistance * MathF.Sin(YaxisAngle));
+
+            UpdateCameraVectors();
         }
 
         public void UpdateCameraVectors()

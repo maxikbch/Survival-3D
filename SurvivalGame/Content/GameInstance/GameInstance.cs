@@ -18,10 +18,5 @@ namespace SurvivalGame
 
         public Player player = new Player();
 
-        public GameInstance()
-        {
-            
-        }
-
     }
 }

@@ -31,7 +31,7 @@ namespace SurvivalGame
 
         //GameInstance
 
-        private GameInstance game = new GameInstance();
+        private GameInstance game;
 
         //Carpetas
 
@@ -49,13 +49,18 @@ namespace SurvivalGame
         {
             screenSize = new Point(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
             
-            Camera = new FreeCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0, 2, 0), screenSize);
+            Camera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0, 2, 0));
 
+            SElem.effect = Effect;
+            SElem.content = Content;
+            SElem.graphicsDevice = GraphicsDevice;
 
             World = Matrix.Identity;
             View = Matrix.CreateLookAt(Vector3.UnitZ * 150, Vector3.Zero, Vector3.Up);
             var viewMatrix = Matrix.CreateLookAt(new Vector3(0, 0, 50), Vector3.Forward, Vector3.Up);
             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 1, 250);
+
+            game = new GameInstance();
 
             base.Initialize();
         }
@@ -72,9 +77,9 @@ namespace SurvivalGame
             Effect.Parameters["diffuseColor"].SetValue(Color.White.ToVector3());
             Effect.Parameters["specularColor"].SetValue(Color.White.ToVector3());
 
-            Effect.Parameters["KAmbient"].SetValue(0.7f);
-            Effect.Parameters["KDiffuse"].SetValue(1f);
-            Effect.Parameters["KSpecular"].SetValue(0.3f);
+            Effect.Parameters["KAmbient"].SetValue(0.65f);
+            Effect.Parameters["KDiffuse"].SetValue(0.4f);
+            Effect.Parameters["KSpecular"].SetValue(0.15f);
             Effect.Parameters["shininess"].SetValue(1f);
 
 
@@ -87,9 +92,13 @@ namespace SurvivalGame
             if (Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            game.world.Update(gameTime, Vector3.Zero);
-
+            Camera.UpdatePlayerPosition(game.player.position);
             Camera.Update(gameTime);
+
+            game.player.Update(gameTime, Camera.FrontDirection, Camera.RightDirection);
+            game.player.UpdateY(game.world.GetFloorHigh(game.player.position), game.world.GetFloorNormal(game.player.position));
+
+            game.world.Update(gameTime, game.player.position);
 
             // TODO: Add your update logic here
 
@@ -111,7 +120,7 @@ namespace SurvivalGame
             // TODO: Add your drawing code here
             game.world.Draw(GraphicsDevice, Content, Camera.View, Camera.Projection);
 
-
+            game.player.Draw(Camera.View, Camera.Projection);
 
             base.Draw(gameTime);
         }

@@ -13,5 +13,10 @@ namespace SurvivalGame
         public static Keys centerFreeCamera = Keys.G;
         public static Keys rotateCameraLeft = Keys.Q;
         public static Keys rotateCameraRight = Keys.E;
+
+        public static Keys playerMoveForward = Keys.W;
+        public static Keys playerMoveBackward = Keys.S;
+        public static Keys playerMoveLeft = Keys.A;
+        public static Keys playerMoveRight = Keys.D;
     }
 }
