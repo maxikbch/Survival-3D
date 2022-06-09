@@ -78,6 +78,38 @@ namespace SurvivalGame.Elements
                             chunks[i + 1, j].points[0, chunkLastSlot]);
                 }
             }
+
+            for (int i = 0; i < worldSize - 1; i++)
+            {
+                int j = worldSize - 1;
+                for (int e = 0; e < chunkLastSlot; e++)
+                {
+                    chunks[i, j].AddTriangle(
+                            chunks[i, j].points[chunkLastSlot, e],
+                            chunks[i + 1, j].points[0, e + 1],
+                            chunks[i + 1, j].points[0, e]);
+                    chunks[i, j].AddTriangle(
+                        chunks[i, j].points[chunkLastSlot, e],
+                        chunks[i, j].points[chunkLastSlot, e + 1],
+                        chunks[i + 1, j].points[0, e + 1]);
+                }
+            }
+
+            for (int j = 0; j < worldSize - 1; j++)
+            {
+                int i = worldSize - 1;
+                for (int e = 0; e < chunkLastSlot; e++)
+                {
+                    chunks[i, j].AddTriangle(
+                        chunks[i, j].points[e, chunkLastSlot],
+                        chunks[i, j + 1].points[e, 0],
+                        chunks[i, j + 1].points[e + 1, 0]);
+                    chunks[i, j].AddTriangle(
+                        chunks[i, j].points[e, chunkLastSlot],
+                        chunks[i, j + 1].points[e + 1, 0],
+                        chunks[i, j].points[e + 1, chunkLastSlot]);
+                }
+            }
         }
 
         public void InitWorldPoints()
