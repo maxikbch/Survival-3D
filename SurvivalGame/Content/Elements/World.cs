@@ -15,8 +15,8 @@ namespace SurvivalGame.Elements
     {
         int chunkSize = 10;
         int worldSize;
-        int worldRadio = 20; //MantenerImparidad
-        int visionRange = 3; //RangoDeChunks
+        int worldRadio = 3; //MantenerImparidad
+        int visionRange = 2; //RangoDeChunks
         float centration = 0;
         Chunk[,] chunks;
         Vector2 center;
@@ -27,11 +27,9 @@ namespace SurvivalGame.Elements
         public World()
         {
             worldSize = 1 + (worldRadio - 1) * 2;
-            to000 = new Vector3(1, 0, 1) * ((float)((worldSize * chunkSize) - 1) / 2);
-            if (MathC.Even(chunkSize)) centration = 0.5f;
+            to000 = new Vector3(1, 0, 1) * (float)(worldSize * (chunkSize) - 1) / 2;
             InitChunks();
             InitWorldPoints();
-            InitChunkTriangles();
         }
 
         public void InitChunks()
@@ -41,7 +39,43 @@ namespace SurvivalGame.Elements
             {
                 for (int j = 0; j < worldSize; j++)
                 {
-                    chunks[i, j] = new Chunk(chunkSize);
+                    Vector2 chunkPos = new Vector2(i * (chunkSize), j * (chunkSize)) - new Vector2(to000.X, to000.X);
+                    var e = 0;
+                    chunks[i, j] = new Chunk(chunkSize, chunkPos);
+                }
+            }
+            int chunkLastSlot = chunkSize - 1;
+
+            for (int i = 0; i < worldSize - 1; i++)
+            {
+                for (int j = 0; j < worldSize - 1; j++)
+                {
+                    for (int e = 0; e < chunkLastSlot; e++) {
+                        chunks[i, j].AddTriangle(
+                            chunks[i, j].points[chunkLastSlot, e],
+                            chunks[i + 1, j].points[0, e + 1],
+                            chunks[i + 1, j].points[0, e]);
+                        chunks[i, j].AddTriangle(
+                            chunks[i, j].points[chunkLastSlot, e],
+                            chunks[i, j].points[chunkLastSlot, e + 1],
+                            chunks[i + 1, j].points[0, e + 1]);
+                        chunks[i, j].AddTriangle(
+                            chunks[i, j].points[e, chunkLastSlot],
+                            chunks[i, j + 1].points[e, 0],
+                            chunks[i, j + 1].points[e + 1, 0]);
+                        chunks[i, j].AddTriangle(
+                            chunks[i, j].points[e, chunkLastSlot],
+                            chunks[i, j + 1].points[e + 1, 0],
+                            chunks[i, j].points[e + 1, chunkLastSlot]);
+                    }
+                    chunks[i, j].AddTriangle(
+                            chunks[i, j].points[chunkLastSlot, chunkLastSlot],
+                            chunks[i, j + 1].points[chunkLastSlot, 0],
+                            chunks[i + 1, j + 1].points[0, 0]);
+                    chunks[i, j].AddTriangle(
+                            chunks[i, j].points[chunkLastSlot, chunkLastSlot],
+                            chunks[i + 1, j + 1].points[0, 0],
+                            chunks[i + 1, j].points[0, chunkLastSlot]);
                 }
             }
         }
@@ -49,33 +83,19 @@ namespace SurvivalGame.Elements
         public void InitWorldPoints()
         {
             points = new WorldPoint[chunkSize * worldSize, chunkSize * worldSize];
+
             for (int i = 0; i < chunkSize * worldSize; i++)
             {
                 for (int j = 0; j < chunkSize * worldSize; j++)
                 {
-                    float x = i - to000.X;
-                    float z = j - to000.Z;
-                    float y = 1f * MathF.Sin(x * MathF.PI/12) * MathF.Sin(z * MathF.PI / 12);
-                    Vector3 position = new Vector3(x, y - 1, z);
-                    int chunkX = (int)MathF.Floor(i / chunkSize);
-                    int chunkZ = (int)MathF.Floor(j / chunkSize);
-                    Color color = chunks[chunkX, chunkZ].GetColor();
-                    points[i, j] = new WorldPoint(position, color);
+                    int x = i / chunkSize;
+                    int y = j / chunkSize;
+                    int a = i % chunkSize;
+                    int b = j % chunkSize;
+                    points[i, j] = chunks[x, y].points[a, b];
                 }
             }
-        }
 
-        public void InitChunkTriangles()
-        {
-            for (int i = 0; i < chunkSize * worldSize - 1; i++)
-            {
-                for (int j = 0; j < chunkSize * worldSize - 1; j++)
-                {
-                    int chunkX = (int)MathF.Floor(i / chunkSize);
-                    int chunkZ = (int)MathF.Floor(j / chunkSize);
-                    chunks[chunkX, chunkZ].triangles.AddRange(AddFloorTriangles(SElem.graphicsDevice, SElem.content, i, j));
-                }
-            }
         }
 
         public void Update(GameTime gameTime, Vector3 playerPosition)
@@ -90,9 +110,12 @@ namespace SurvivalGame.Elements
 
             for (int i = (int) center.X - range; i <= (int)center.X + range; i++)
             {
-                for (int j = (int)center.Y - range; j <= (int)center.Y + range; j++)
+                for (int j = (int) center.Y - range; j <= (int)center.Y + range; j++)
                 {
-                    chunks[i, j].Draw(view, projection);
+                    if (i < worldSize && j < worldSize && i > -1 && j > -1)
+                    {
+                        chunks[i, j].Draw(view, projection);
+                    }
                 }
             }
         }
@@ -101,6 +124,12 @@ namespace SurvivalGame.Elements
         {
             Vector3 pj = position;
             Vector3 pjRepos = position + to000;
+            if (
+                !MathC.BetweenValuesIncluded((int)MathF.Floor(pjRepos.X), 0, worldSize * chunkSize - 1) ||
+                !MathC.BetweenValuesIncluded((int)MathF.Floor(pjRepos.Z), 0, worldSize * chunkSize - 1))
+            {
+                return 0;
+            }
             Vector3 p1 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
             Vector3 v1j = p1 - pj;
             Vector3 n = GetFloorNormal(position);
@@ -111,6 +140,14 @@ namespace SurvivalGame.Elements
         public Vector3 GetFloorNormal(Vector3 position)
         {
             Vector3 pjRepos = position + to000;
+            if (
+                !MathC.BetweenValuesIncluded((int)MathF.Floor(pjRepos.X), 0, worldSize * chunkSize - 1) ||
+                !MathC.BetweenValuesIncluded((int)MathF.Floor(pjRepos.Z), 0, worldSize * chunkSize - 1) ||
+                !MathC.BetweenValuesIncluded((int)MathF.Ceiling(pjRepos.X), 0, worldSize * chunkSize - 1) ||
+                !MathC.BetweenValuesIncluded((int)MathF.Ceiling(pjRepos.Z), 0, worldSize * chunkSize - 1))
+            {
+                return Vector3.Up;
+            }
             Vector3 p1 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
             Vector3 p2 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
             Vector3 p3 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
@@ -131,8 +168,57 @@ namespace SurvivalGame.Elements
             center = _center;
         }
 
-        private List<TrianglePrimitive> AddFloorTriangles(GraphicsDevice graphicsDevice, ContentManager content, int i, int j)
+
+    }
+
+    public class Chunk
+    {
+        public List<TrianglePrimitive> triangles = new List<TrianglePrimitive>();
+        public Biome biome = Biome.Llanura;
+        public WorldPoint[,] points;
+        public Vector2 center;
+
+        public Chunk(int chunkSize, Vector2 center)
         {
+            points = new WorldPoint[chunkSize, chunkSize];
+            this.center = center;
+            InitPoints(chunkSize);
+            InitChunkTriangles(chunkSize);
+        }
+
+        public void InitPoints(int chunkSize)
+        {
+            points = new WorldPoint[chunkSize, chunkSize];
+            Random rnd = new Random();
+            float y = rnd.Next(0, 2);
+            for (int i = 0; i < chunkSize; i++)
+            {
+                for (int j = 0; j < chunkSize; j++)
+                {
+                    float x = i + center.X;
+                    float z = j + center.Y;
+                    Vector3 position = new Vector3(x, y - 1, z);
+                    Color color = biome.color;
+                    points[i, j] = new WorldPoint(position, color);
+                }
+            }
+        }
+
+        public void InitChunkTriangles(int chunkSize)
+        {
+            for (int i = 0; i < chunkSize - 1; i++)
+            {
+                for (int j = 0; j < chunkSize - 1; j++)
+                {
+                    triangles.AddRange(AddFloorTriangles(i, j));
+                }
+            }
+        }
+
+        private List<TrianglePrimitive> AddFloorTriangles(int i, int j)
+        {
+            GraphicsDevice graphicsDevice = SElem.graphicsDevice;
+            ContentManager content = SElem.content;
             List<TrianglePrimitive> triangles = new List<TrianglePrimitive>();
             triangles.Add(new TrianglePrimitive(graphicsDevice, content,
                 points[i + 1, j + 1].position, points[i + 1, j].position, points[i, j].position,
@@ -143,22 +229,13 @@ namespace SurvivalGame.Elements
             return triangles;
         }
 
-    }
-
-    public class Chunk
-    {
-        public List<TrianglePrimitive> triangles = new List<TrianglePrimitive>();
-        public Biome biome = Biome.Llanura;
-        public WorldPoint[,] points;
-
-        public Color GetColor()
+        public void AddTriangle(WorldPoint a, WorldPoint b, WorldPoint c)
         {
-            return biome.color;
-        }
-
-        public Chunk(int chunkSize)
-        {
-            points = new WorldPoint[chunkSize, chunkSize];
+            GraphicsDevice graphicsDevice = SElem.graphicsDevice;
+            ContentManager content = SElem.content;
+            triangles.Add(new TrianglePrimitive(graphicsDevice, content,
+                a.position, b.position, c.position,
+                a.color, b.color, c.color));
         }
 
         public void Update(GameTime gameTime)

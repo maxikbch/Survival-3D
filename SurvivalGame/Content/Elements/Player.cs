@@ -46,7 +46,7 @@ namespace SurvivalGame.Elements
 
         public void Draw(Matrix view, Matrix projection)
         {
-            bodyMatrix = Matrix.CreateScale(scale) * Matrix.CreateFromQuaternion(rotation) * Matrix.CreateTranslation(position);
+            bodyMatrix = Matrix.CreateScale(scale) * Matrix.CreateTranslation(position);
             body.Draw(bodyMatrix, view, projection);
         }
 

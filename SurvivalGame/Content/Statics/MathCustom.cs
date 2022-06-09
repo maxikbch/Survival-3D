@@ -41,5 +41,12 @@ namespace SurvivalGame
             if (number < 0) return false;
             return true;
         }
+
+        public static bool BetweenValuesIncluded(int number, int min, int max)
+        {
+            if (number < min) return false;
+            if (number > max) return false;
+            return true;
+        }
     }
 }
