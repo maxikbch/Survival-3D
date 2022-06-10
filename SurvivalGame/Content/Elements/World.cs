@@ -13,9 +13,9 @@ namespace SurvivalGame.Elements
     
     public class World
     {
-        int chunkSize = 10;
+        int chunkSize = 9;
         int worldSize;
-        int worldRadio = 3; //MantenerImparidad
+        int worldRadio = 4; //MantenerImparidad
         int visionRange = 2; //RangoDeChunks
         float centration = 0;
         Chunk[,] chunks;
@@ -27,9 +27,11 @@ namespace SurvivalGame.Elements
         public World()
         {
             worldSize = 1 + (worldRadio - 1) * 2;
-            to000 = new Vector3(1, 0, 1) * (float)(worldSize * (chunkSize) - 1) / 2;
+            to000 = new Vector3(1, 0, 1) * (float)(worldSize * (chunkSize)) / 2;
+
             InitChunks();
             InitWorldPoints();
+            SetChunkTriangles();
         }
 
         public void InitChunks()
@@ -39,94 +41,96 @@ namespace SurvivalGame.Elements
             {
                 for (int j = 0; j < worldSize; j++)
                 {
-                    Vector2 chunkPos = new Vector2(i * (chunkSize), j * (chunkSize)) - new Vector2(to000.X, to000.X);
-                    var e = 0;
-                    chunks[i, j] = new Chunk(chunkSize, chunkPos);
-                }
-            }
-            int chunkLastSlot = chunkSize - 1;
-
-            for (int i = 0; i < worldSize - 1; i++)
-            {
-                for (int j = 0; j < worldSize - 1; j++)
-                {
-                    for (int e = 0; e < chunkLastSlot; e++) {
-                        chunks[i, j].AddTriangle(
-                            chunks[i, j].points[chunkLastSlot, e],
-                            chunks[i + 1, j].points[0, e + 1],
-                            chunks[i + 1, j].points[0, e]);
-                        chunks[i, j].AddTriangle(
-                            chunks[i, j].points[chunkLastSlot, e],
-                            chunks[i, j].points[chunkLastSlot, e + 1],
-                            chunks[i + 1, j].points[0, e + 1]);
-                        chunks[i, j].AddTriangle(
-                            chunks[i, j].points[e, chunkLastSlot],
-                            chunks[i, j + 1].points[e, 0],
-                            chunks[i, j + 1].points[e + 1, 0]);
-                        chunks[i, j].AddTriangle(
-                            chunks[i, j].points[e, chunkLastSlot],
-                            chunks[i, j + 1].points[e + 1, 0],
-                            chunks[i, j].points[e + 1, chunkLastSlot]);
-                    }
-                    WorldPoint _p1 = chunks[i, j].points[chunkLastSlot, chunkLastSlot];
-                    WorldPoint _p2 = chunks[i + 1, j + 1].points[0, 0];
-                    WorldPoint _p3 = chunks[i, j + 1].points[chunkLastSlot, 0];
-                    WorldPoint _p4 = chunks[i + 1, j].points[0, chunkLastSlot];
-                    if (!TakeOtherTriangles(_p1.position, _p2.position, _p3.position, _p4.position))
-                    {
-                        chunks[i, j].AddTriangle(
-                                _p1,
-                                _p3,
-                                _p2);
-                        chunks[i, j].AddTriangle(
-                                _p1,
-                                _p2,
-                                _p4);
-                    } else
-                    {
-                        chunks[i, j].AddTriangle(
-                                _p3,
-                                _p2,
-                                _p4);
-                        chunks[i, j].AddTriangle(
-                                _p3,
-                                _p4,
-                                _p1);
-                    }
+                    chunks[i, j] = new Chunk(chunkSize);
                 }
             }
 
-            for (int i = 0; i < worldSize - 1; i++)
+            for (int i = 0; i < worldSize; i++)
             {
-                int j = worldSize - 1;
-                for (int e = 0; e < chunkLastSlot; e++)
+                for (int j = 0; j < worldSize; j++)
                 {
-                    chunks[i, j].AddTriangle(
-                            chunks[i, j].points[chunkLastSlot, e],
-                            chunks[i + 1, j].points[0, e + 1],
-                            chunks[i + 1, j].points[0, e]);
-                    chunks[i, j].AddTriangle(
-                        chunks[i, j].points[chunkLastSlot, e],
-                        chunks[i, j].points[chunkLastSlot, e + 1],
-                        chunks[i + 1, j].points[0, e + 1]);
+                    List<int> lastHighs = new List<int>();
+                    if (i == 0 && j == 0) lastHighs.Add(0);
+                    if (i > 0) lastHighs.Add(chunks[i - 1,j].high);
+                    if (j > 0) lastHighs.Add(chunks[i, j - 1].high);
+                    int newHigh = lastHighs[MathC.IntRandom(0, lastHighs.Count - 1)];
+                    newHigh = MathC.IntRandom(newHigh - 1, newHigh + 1);
+                    chunks[i, j].high = newHigh;
+                }
+            }
+        }
+
+        public void InitWorldPoints()
+        {
+            points = new WorldPoint[chunkSize * worldSize + 1, chunkSize * worldSize + 1];
+
+            for (int i = 0; i < chunkSize * worldSize + 1; i++)
+            {
+                for (int j = 0; j < chunkSize * worldSize + 1; j++)
+                {
+                    float y = GetWorldPointHigh(i, j);
+                    float x = i - to000.X;
+                    float z = j - to000.X;
+                    points[i, j] = new WorldPoint(new Vector3(x, y - 1, z), Color.Green);
                 }
             }
 
-            for (int j = 0; j < worldSize - 1; j++)
+        }
+
+        public int GetWorldPointHigh(int x, int y)
+        {
+            int high;
+            bool xBorder = x % (chunkSize) == 0 && x != 0;
+            bool yBorder = y % (chunkSize) == 0 && y != 0;
+            int xChunkMax = x / chunkSize;
+            if (xChunkMax > worldSize - 1) { xChunkMax--; xBorder = false; }
+            int yChunkMax = y / chunkSize;
+            if (yChunkMax > worldSize - 1) { yChunkMax--; yBorder = false; }
+            List<int> highs = new List<int>();
+            highs.Add(chunks[xChunkMax, yChunkMax].high);
+            if (xBorder) highs.Add(chunks[xChunkMax - 1, yChunkMax].high);
+            if (yBorder) highs.Add(chunks[xChunkMax, yChunkMax - 1].high);
+            if (xBorder && yBorder) highs.Add(chunks[xChunkMax - 1, yChunkMax - 1].high);
+            high = highs[MathC.IntRandom(highs.Count - 1)];
+            return high;
+        }
+
+        public void SetChunkTriangles()
+        {
+            for (int i = 0; i < worldSize; i++)
             {
-                int i = worldSize - 1;
-                for (int e = 0; e < chunkLastSlot; e++)
+                for (int j = 0; j < worldSize; j++)
                 {
-                    chunks[i, j].AddTriangle(
-                        chunks[i, j].points[e, chunkLastSlot],
-                        chunks[i, j + 1].points[e, 0],
-                        chunks[i, j + 1].points[e + 1, 0]);
-                    chunks[i, j].AddTriangle(
-                        chunks[i, j].points[e, chunkLastSlot],
-                        chunks[i, j + 1].points[e + 1, 0],
-                        chunks[i, j].points[e + 1, chunkLastSlot]);
+                    chunks[i, j].triangles = GenerateTrianglesFromMatrix(GetChunkPoints(i, j));
                 }
             }
+
+        }
+
+        private WorldPoint[,] GetChunkPoints(int x, int y)
+        {
+            WorldPoint[,] _points = new WorldPoint[chunkSize + 1, chunkSize + 1];
+            for (int i = 0; i < chunkSize + 1; i++)
+            {
+                for (int j = 0; j < chunkSize + 1; j++)
+                {
+                    _points[i, j] = points[i + chunkSize * x, j + chunkSize * y];
+                }
+            }
+            return _points;
+        }
+
+        private TrianglePrimitive[] GenerateTrianglesFromMatrix(WorldPoint[,] _points)
+        {
+            List<TrianglePrimitive> _triangles = new List<TrianglePrimitive>();
+            for (int i = 0; i < chunkSize; i++)
+            {
+                for (int j = 0; j < chunkSize; j++)
+                {
+                    _triangles.AddRange(GenerateQuad(_points[i, j], _points[i + 1, j + 1], _points[i + 1, j], _points[i, j + 1]));
+                }
+            }
+            return _triangles.ToArray();
         }
 
         private bool TakeOtherTriangles(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4)
@@ -138,23 +142,32 @@ namespace SurvivalGame.Elements
             return false;
         }
 
-        public void InitWorldPoints()
+        private List<TrianglePrimitive> GenerateQuad(WorldPoint p1, WorldPoint p2, WorldPoint p3, WorldPoint p4)
         {
-            points = new WorldPoint[chunkSize * worldSize, chunkSize * worldSize];
-
-            for (int i = 0; i < chunkSize * worldSize; i++)
+            List<TrianglePrimitive> _triangles = new List<TrianglePrimitive>();
+            //!TakeOtherTriangles(p1.position, p2.position, p3.position, p4.position)
+            if (true)
             {
-                for (int j = 0; j < chunkSize * worldSize; j++)
-                {
-                    int x = i / chunkSize;
-                    int y = j / chunkSize;
-                    int a = i % chunkSize;
-                    int b = j % chunkSize;
-                    points[i, j] = chunks[x, y].points[a, b];
-                }
+                _triangles.Add(GenerateTriangle(p1,p2,p3));
+                _triangles.Add(GenerateTriangle(p1,p4,p2));
             }
-
+            else
+            {
+                _triangles.Add(GenerateTriangle(p3,p2,p4));
+                _triangles.Add(GenerateTriangle(p3,p4,p1));
+            }
+            return _triangles;
         }
+
+        public TrianglePrimitive GenerateTriangle(WorldPoint a, WorldPoint b, WorldPoint c)
+        {
+            GraphicsDevice graphicsDevice = SElem.graphicsDevice;
+            ContentManager content = SElem.content;
+            return new TrianglePrimitive(graphicsDevice, content,
+                a.position, b.position, c.position,
+                a.color, b.color, c.color);
+        }
+
 
         public void Update(GameTime gameTime, Vector3 playerPosition)
         {
@@ -235,69 +248,13 @@ namespace SurvivalGame.Elements
 
     public class Chunk
     {
-        public List<TrianglePrimitive> triangles = new List<TrianglePrimitive>();
+        public TrianglePrimitive[] triangles;
         public Biome biome = Biome.Llanura;
-        public WorldPoint[,] points;
-        public Vector2 center;
+        public int high;
 
-        public Chunk(int chunkSize, Vector2 center)
+        public Chunk(int chunkSize)
         {
-            points = new WorldPoint[chunkSize, chunkSize];
-            this.center = center;
-            InitPoints(chunkSize);
-            InitChunkTriangles(chunkSize);
-        }
-
-        public void InitPoints(int chunkSize)
-        {
-            points = new WorldPoint[chunkSize, chunkSize];
-            Random rnd = new Random();
-            float y = rnd.Next(0, 2);
-            for (int i = 0; i < chunkSize; i++)
-            {
-                for (int j = 0; j < chunkSize; j++)
-                {
-                    float x = i + center.X;
-                    float z = j + center.Y;
-                    Vector3 position = new Vector3(x, y - 1, z);
-                    Color color = biome.color;
-                    points[i, j] = new WorldPoint(position, color);
-                }
-            }
-        }
-
-        public void InitChunkTriangles(int chunkSize)
-        {
-            for (int i = 0; i < chunkSize - 1; i++)
-            {
-                for (int j = 0; j < chunkSize - 1; j++)
-                {
-                    triangles.AddRange(AddFloorTriangles(i, j));
-                }
-            }
-        }
-
-        private List<TrianglePrimitive> AddFloorTriangles(int i, int j)
-        {
-            GraphicsDevice graphicsDevice = SElem.graphicsDevice;
-            ContentManager content = SElem.content;
-            List<TrianglePrimitive> triangles = new List<TrianglePrimitive>();
-            triangles.Add(new TrianglePrimitive(graphicsDevice, content,
-                points[i + 1, j + 1].position, points[i + 1, j].position, points[i, j].position,
-                points[i + 1, j + 1].color, points[i + 1, j].color, points[i, j].color));
-            triangles.Add(new TrianglePrimitive(graphicsDevice, content,
-                points[i, j].position, points[i, j + 1].position, points[i + 1, j + 1].position,
-                points[i, j].color, points[i, j + 1].color, points[i + 1, j + 1].color));
-            return triangles;
-        }
-
-        public void AddTriangle(WorldPoint a, WorldPoint b, WorldPoint c)
-        {
-            GraphicsDevice graphicsDevice = SElem.graphicsDevice;
-            ContentManager content = SElem.content;
-            triangles.Add(new TrianglePrimitive(graphicsDevice, content,
-                a.position, b.position, c.position,
-                a.color, b.color, c.color));
+            triangles = new TrianglePrimitive[(int)Math.Pow(chunkSize - 1, 2) * 2];
         }
 
         public void Update(GameTime gameTime)

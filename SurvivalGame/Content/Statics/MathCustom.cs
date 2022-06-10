@@ -56,12 +56,41 @@ namespace SurvivalGame
             
             return MathF.Acos(num / den);
         }
+
         public static Vector3 NormalWith3Points(Vector3 p1, Vector3 p2, Vector3 p3)
         {
             Vector3 v12 = (p1 - p2);
             Vector3 v13 = (p1 - p3);
             Vector3 n = Vector3.Cross(v12, v13);
             return n;
+        }
+
+        public static float FloatRandom(float max = 1)
+        {
+            Random rnd = new Random();
+            float value = (float)rnd.NextDouble();
+            return value * max;
+        }
+
+        public static float FloatRandom(float min = 0, float max = 1)
+        {
+            Random rnd = new Random();
+            float value = (float)rnd.NextDouble();
+            return value * (max - min) + min;
+        }
+
+        public static int IntRandom(int max = 1)
+        {
+            Random rnd = new Random();
+            int value = rnd.Next(0, max + 1);
+            return value;
+        }
+
+        public static int IntRandom(int min = 0, int max = 1)
+        {
+            Random rnd = new Random();
+            int value = rnd.Next(min, max + 1);
+            return value;
         }
 
     }
