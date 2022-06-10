@@ -48,5 +48,21 @@ namespace SurvivalGame
             if (number > max) return false;
             return true;
         }
+
+        public static float AngleBetween2Vectors(Vector3 a, Vector3 b)
+        {
+            float num = Vector3.Dot(a, b);
+            float den = Vector3.Distance(Vector3.Zero, a) * Vector3.Distance(Vector3.Zero, b);
+            
+            return MathF.Acos(num / den);
+        }
+        public static Vector3 NormalWith3Points(Vector3 p1, Vector3 p2, Vector3 p3)
+        {
+            Vector3 v12 = (p1 - p2);
+            Vector3 v13 = (p1 - p3);
+            Vector3 n = Vector3.Cross(v12, v13);
+            return n;
+        }
+
     }
 }

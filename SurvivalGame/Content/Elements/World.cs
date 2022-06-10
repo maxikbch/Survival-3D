@@ -68,14 +68,31 @@ namespace SurvivalGame.Elements
                             chunks[i, j + 1].points[e + 1, 0],
                             chunks[i, j].points[e + 1, chunkLastSlot]);
                     }
-                    chunks[i, j].AddTriangle(
-                            chunks[i, j].points[chunkLastSlot, chunkLastSlot],
-                            chunks[i, j + 1].points[chunkLastSlot, 0],
-                            chunks[i + 1, j + 1].points[0, 0]);
-                    chunks[i, j].AddTriangle(
-                            chunks[i, j].points[chunkLastSlot, chunkLastSlot],
-                            chunks[i + 1, j + 1].points[0, 0],
-                            chunks[i + 1, j].points[0, chunkLastSlot]);
+                    WorldPoint _p1 = chunks[i, j].points[chunkLastSlot, chunkLastSlot];
+                    WorldPoint _p2 = chunks[i + 1, j + 1].points[0, 0];
+                    WorldPoint _p3 = chunks[i, j + 1].points[chunkLastSlot, 0];
+                    WorldPoint _p4 = chunks[i + 1, j].points[0, chunkLastSlot];
+                    if (!TakeOtherTriangles(_p1.position, _p2.position, _p3.position, _p4.position))
+                    {
+                        chunks[i, j].AddTriangle(
+                                _p1,
+                                _p3,
+                                _p2);
+                        chunks[i, j].AddTriangle(
+                                _p1,
+                                _p2,
+                                _p4);
+                    } else
+                    {
+                        chunks[i, j].AddTriangle(
+                                _p3,
+                                _p2,
+                                _p4);
+                        chunks[i, j].AddTriangle(
+                                _p3,
+                                _p4,
+                                _p1);
+                    }
                 }
             }
 
@@ -110,6 +127,15 @@ namespace SurvivalGame.Elements
                         chunks[i, j].points[e + 1, chunkLastSlot]);
                 }
             }
+        }
+
+        private bool TakeOtherTriangles(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4)
+        {
+            if(p1.Y != p2.Y && p3.Y == p4.Y)
+                return true;
+            if (p1.Y == p2.Y && p3.Y == p4.Y && p1.Y > p3.Y)
+                return true;
+            return false;
         }
 
         public void InitWorldPoints()
@@ -181,12 +207,16 @@ namespace SurvivalGame.Elements
                 return Vector3.Up;
             }
             Vector3 p1 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
-            Vector3 p2 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
             Vector3 p3 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
-            Vector3 v12 = (p1 - p2);
-            Vector3 v13 = (p1 - p3);
-            Vector3 n = Vector3.Cross(v12, v13);
-            return n;
+            Vector3 p2;
+            Vector2 _p1 = new Vector2(MathF.Floor(pjRepos.X), MathF.Ceiling(pjRepos.Z));
+            Vector2 _p2 = new Vector2(MathF.Ceiling(pjRepos.X), MathF.Floor(pjRepos.Z));
+            Vector2 _pj = new Vector2(pjRepos.X, pjRepos.Z);
+            if (Vector2.Distance(_p1, _pj) < Vector2.Distance(_p2, _pj))
+                p2 = points[(int)_p1.X, (int)_p1.Y].position;
+            else
+                p2 = points[(int)_p2.X, (int)_p2.Y].position;
+            return MathC.NormalWith3Points(p1, p2, p3);
         }
 
 
