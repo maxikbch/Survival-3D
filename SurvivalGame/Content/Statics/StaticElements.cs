@@ -12,5 +12,7 @@ namespace SurvivalGame
         public static Effect effect;
         public static GraphicsDevice graphicsDevice;
         public static ContentManager content;
+        public static SpriteBatch spriteBatch;
+        public static SpriteFont fontA;
     }
 }

@@ -41,16 +41,20 @@ namespace SurvivalGame.Elements
         public void UpdateY(float y, Vector3 normal)
         {
             position = new Vector3(position.X, y + scale.Y / 2, position.Z);
-            Vector3 ortNormal = Vector3.Cross(Vector3.Normalize(normal), Vector3.Up); //Vector normal al plano entre la normal y el vector up
+            Vector3 ortNormal = Vector3.Normalize(Vector3.Cross(normal, Vector3.Up)); //Vector normal al plano entre la normal y el vector up
             Vector3 proNormal = Vector3.Normalize(normal * new Vector3(1, 0, 1));
-            float angle = MathC.AngleBetween2Vectors(normal, proNormal);
-            rotation = new Quaternion(ortNormal, 1f);
+            float angle = MathC.AngleBetween2Vectors(normal, proNormal) / MathF.PI;
+            if (normal == Vector3.Up) {
+                ortNormal = Vector3.Right;
+                angle = 0;
+            }
+            rotation = new Quaternion(ortNormal, angle);
         }
 
         public void Draw(Matrix view, Matrix projection)
         {
             bodyMatrix = Matrix.CreateScale(scale) * Matrix.CreateTranslation(position);
-            //bodyMatrix = Matrix.CreateScale(scale) * Matrix.CreateFromQuaternion(rotation) * Matrix.CreateTranslation(position);
+            bodyMatrix = Matrix.CreateScale(scale) * Matrix.CreateFromQuaternion(rotation) * Matrix.CreateTranslation(position);
             body.Draw(bodyMatrix, view, projection);
         }
 

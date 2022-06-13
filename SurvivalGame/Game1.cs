@@ -37,6 +37,7 @@ namespace SurvivalGame
 
         private static string AssetsFolder = "Assets/";
         private static string ShadersFolder = "Shaders/";
+        private static string SpriteFontsFolder = "SpriteFonts/";
 
         public Game1()
         {
@@ -54,6 +55,8 @@ namespace SurvivalGame
             SElem.effect = Effect;
             SElem.content = Content;
             SElem.graphicsDevice = GraphicsDevice;
+            SElem.spriteBatch = new SpriteBatch(GraphicsDevice);
+            SElem.fontA = Content.Load<SpriteFont>(SpriteFontsFolder + "Cascadia/CascadiaCodePL");
 
             World = Matrix.Identity;
             View = Matrix.CreateLookAt(Vector3.UnitZ * 150, Vector3.Zero, Vector3.Up);
@@ -121,6 +124,12 @@ namespace SurvivalGame
             game.world.Draw(GraphicsDevice, Content, Camera.View, Camera.Projection);
 
             game.player.Draw(Camera.View, Camera.Projection);
+
+            Vector3 normal = game.world.GetFloorNormal(game.player.position);
+            string txt = "Normal: {" + normal.X + ";" + normal.Y + ";" + normal.Z + "}";
+            string txt2 = "";
+            Text.DrawTextFromCenter(txt, 0, -200, 1f, Color.Red, SElem.fontA);
+            Text.DrawTextFromCenter(txt2, 0, -225, 1f, Color.Red, SElem.fontA);
 
             base.Draw(gameTime);
         }

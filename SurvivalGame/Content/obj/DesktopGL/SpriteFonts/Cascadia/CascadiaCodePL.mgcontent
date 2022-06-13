@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <SourceFile>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/SpriteFonts/Cascadia/CascadiaCodePL.spritefont</SourceFile>
+  <SourceTime>2022-05-13T22:30:25.8811342-03:00</SourceTime>
+  <DestFile>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/bin/DesktopGL/SpriteFonts/Cascadia/CascadiaCodePL.xnb</DestFile>
+  <DestTime>2022-06-13T17:51:49.8819148-03:00</DestTime>
+  <Importer>FontDescriptionImporter</Importer>
+  <ImporterTime>2020-08-10T13:17:54-03:00</ImporterTime>
+  <Processor>FontDescriptionProcessor</Processor>
+  <ProcessorTime>2020-08-10T13:17:54-03:00</ProcessorTime>
+  <Parameters>
+    <Key>PremultiplyAlpha</Key>
+    <Value>True</Value>
+  </Parameters>
+  <Parameters>
+    <Key>TextureFormat</Key>
+    <Value>Compressed</Value>
+  </Parameters>
+  <Dependencies />
+  <BuildAsset />
+  <BuildOutput />
+</PipelineBuildEvent>

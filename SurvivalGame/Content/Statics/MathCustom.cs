@@ -48,6 +48,12 @@ namespace SurvivalGame
             if (number > max) return false;
             return true;
         }
+        public static bool BetweenValuesIncluded(float number, int min, int max)
+        {
+            if (number < min) return false;
+            if (number > max) return false;
+            return true;
+        }
 
         public static float AngleBetween2Vectors(Vector3 a, Vector3 b)
         {
@@ -62,6 +68,7 @@ namespace SurvivalGame
             Vector3 v12 = (p1 - p2);
             Vector3 v13 = (p1 - p3);
             Vector3 n = Vector3.Cross(v12, v13);
+            n = Vector3.Normalize(n);
             return n;
         }
 

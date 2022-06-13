@@ -24,6 +24,7 @@ namespace SurvivalGame.Elements
         public Vector3 to000;
         public float floorScale = 1f;
 
+
         public World()
         {
             worldSize = 1 + (worldRadio - 1) * 2;
@@ -50,11 +51,13 @@ namespace SurvivalGame.Elements
                 for (int j = 0; j < worldSize; j++)
                 {
                     List<int> lastHighs = new List<int>();
-                    if (i == 0 && j == 0) lastHighs.Add(0);
+                    if (i == 0 && j == 0) lastHighs.Add(MathC.IntRandom(chunks[i,j].biome.minHigh, chunks[i, j].biome.maxHigh));
                     if (i > 0) lastHighs.Add(chunks[i - 1,j].high);
                     if (j > 0) lastHighs.Add(chunks[i, j - 1].high);
                     int newHigh = lastHighs[MathC.IntRandom(0, lastHighs.Count - 1)];
-                    newHigh = MathC.IntRandom(newHigh - 1, newHigh + 1);
+                    int newHighTop = Math.Min(newHigh + 1, chunks[i, j].biome.maxHigh);
+                    int newHighBottom = Math.Max(newHigh - 1, chunks[i, j].biome.minHigh);
+                    newHigh = MathC.IntRandom(newHighBottom, newHighTop);
                     chunks[i, j].high = newHigh;
                 }
             }
@@ -64,11 +67,13 @@ namespace SurvivalGame.Elements
         {
             points = new WorldPoint[chunkSize * worldSize + 1, chunkSize * worldSize + 1];
 
+            int[,] highs = GetPointHighsMatrix();
+
             for (int i = 0; i < chunkSize * worldSize + 1; i++)
             {
                 for (int j = 0; j < chunkSize * worldSize + 1; j++)
                 {
-                    float y = GetWorldPointHigh(i, j);
+                    float y = highs[i, j];
                     float x = i - to000.X;
                     float z = j - to000.X;
                     points[i, j] = new WorldPoint(new Vector3(x, y - 1, z), Color.Green);
@@ -77,20 +82,71 @@ namespace SurvivalGame.Elements
 
         }
 
+        private int[,] GetPointHighsMatrix()
+        {
+            int[,] highs = new int[chunkSize * worldSize + 1, chunkSize * worldSize + 1];
+
+            for (int i = 0; i < chunkSize * worldSize + 1; i++)
+            {
+                for (int j = 0; j < chunkSize * worldSize + 1; j++)
+                {
+                    highs[i, j] = GetWorldPointHigh(i, j);
+                }
+            }
+
+            highs = SmoothHighsMatrix(highs);
+
+            return highs;
+        }
+
+        private int[,] SmoothHighsMatrix(int[,] highs)
+        {
+
+            for (int i = 1; i < chunkSize * worldSize; i++)
+            {
+                for (int j = 1; j < chunkSize * worldSize; j++)
+                {
+                    highs[i, j] = SmoothHigh(highs[i, j - 1], highs[i, j], highs[i, j + 1]);
+                }
+            }
+
+            for (int j = 1; j < chunkSize * worldSize; j++)
+            {
+                for (int i = 1; i < chunkSize * worldSize; i++)
+                {
+                    highs[i, j] = SmoothHigh(highs[i - 1, j], highs[i, j], highs[i + 1, j]);
+                }
+            }
+
+            return highs;
+        }
+
+        private int SmoothHigh(int prehigh, int high, int posthigh)
+        {
+            if (prehigh == posthigh)
+            {
+                return posthigh;
+            }
+            return high;
+        }
+
         public int GetWorldPointHigh(int x, int y)
         {
             int high;
-            bool xBorder = x % (chunkSize) == 0 && x != 0;
-            bool yBorder = y % (chunkSize) == 0 && y != 0;
+            bool notX0 = x != 0;
+            bool notY0 = y != 0;
+            bool xBorder = x % (chunkSize) == 0;
+            bool yBorder = y % (chunkSize) == 0;
             int xChunkMax = x / chunkSize;
             if (xChunkMax > worldSize - 1) { xChunkMax--; xBorder = false; }
             int yChunkMax = y / chunkSize;
             if (yChunkMax > worldSize - 1) { yChunkMax--; yBorder = false; }
             List<int> highs = new List<int>();
             highs.Add(chunks[xChunkMax, yChunkMax].high);
-            if (xBorder) highs.Add(chunks[xChunkMax - 1, yChunkMax].high);
-            if (yBorder) highs.Add(chunks[xChunkMax, yChunkMax - 1].high);
-            if (xBorder && yBorder) highs.Add(chunks[xChunkMax - 1, yChunkMax - 1].high);
+
+            if (xBorder && notX0) highs.Add(chunks[xChunkMax - 1, yChunkMax].high);
+            if (yBorder && notY0) highs.Add(chunks[xChunkMax, yChunkMax - 1].high);
+            if (xBorder && yBorder && notX0 && notY0) highs.Add(chunks[xChunkMax - 1, yChunkMax - 1].high);
             high = highs[MathC.IntRandom(highs.Count - 1)];
             return high;
         }
@@ -135,9 +191,7 @@ namespace SurvivalGame.Elements
 
         private bool TakeOtherTriangles(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4)
         {
-            if(p1.Y != p2.Y && p3.Y == p4.Y)
-                return true;
-            if (p1.Y == p2.Y && p3.Y == p4.Y && p1.Y > p3.Y)
+            if (p1.Y != p2.Y && p3.Y == p4.Y)
                 return true;
             return false;
         }
@@ -145,16 +199,15 @@ namespace SurvivalGame.Elements
         private List<TrianglePrimitive> GenerateQuad(WorldPoint p1, WorldPoint p2, WorldPoint p3, WorldPoint p4)
         {
             List<TrianglePrimitive> _triangles = new List<TrianglePrimitive>();
-            //!TakeOtherTriangles(p1.position, p2.position, p3.position, p4.position)
-            if (true)
+            if (!TakeOtherTriangles(p1.position, p2.position, p3.position, p4.position))
             {
                 _triangles.Add(GenerateTriangle(p1,p2,p3));
                 _triangles.Add(GenerateTriangle(p1,p4,p2));
             }
             else
             {
-                _triangles.Add(GenerateTriangle(p3,p2,p4));
-                _triangles.Add(GenerateTriangle(p3,p4,p1));
+                _triangles.Add(GenerateTriangle(p3,p4,p2));
+                _triangles.Add(GenerateTriangle(p3,p1,p4));
             }
             return _triangles;
         }
@@ -195,41 +248,61 @@ namespace SurvivalGame.Elements
         {
             Vector3 pj = position;
             Vector3 pjRepos = position + to000;
-            if (
-                !MathC.BetweenValuesIncluded((int)MathF.Floor(pjRepos.X), 0, worldSize * chunkSize - 1) ||
-                !MathC.BetweenValuesIncluded((int)MathF.Floor(pjRepos.Z), 0, worldSize * chunkSize - 1))
+            if (PlayerOutOfWorldSpace(pjRepos))
             {
                 return 0;
             }
+            Vector3 XZ = new Vector3(1, 0, 1);
             Vector3 p1 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
-            Vector3 v1j = p1 - pj;
+            Vector3 p2 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
+            Vector3 p3 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
+            Vector3 p4 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
+            Vector3 pf;
+            if (!TakeOtherTriangles(p1, p2, p3, p4))
+            {
+                pf = p1;
+            }
+            else
+            {
+                pf = p3;
+            }
+            Vector3 v1j = pf - pj;
             Vector3 n = GetFloorNormal(position);
-            float y = (v1j.X * n.X + v1j.Z * n.Z) / n.Y + p1.Y;
+            float y = (v1j.X * n.X + v1j.Z * n.Z) / n.Y + pf.Y;
             return y;
         }
 
-        public Vector3 GetFloorNormal(Vector3 position)
+        public Vector3 GetFloorNormal(Vector3 pj)
         {
-            Vector3 pjRepos = position + to000;
-            if (
-                !MathC.BetweenValuesIncluded((int)MathF.Floor(pjRepos.X), 0, worldSize * chunkSize - 1) ||
-                !MathC.BetweenValuesIncluded((int)MathF.Floor(pjRepos.Z), 0, worldSize * chunkSize - 1) ||
-                !MathC.BetweenValuesIncluded((int)MathF.Ceiling(pjRepos.X), 0, worldSize * chunkSize - 1) ||
-                !MathC.BetweenValuesIncluded((int)MathF.Ceiling(pjRepos.Z), 0, worldSize * chunkSize - 1))
+            Vector3 pjRepos = pj + to000;
+            if (PlayerOutOfWorldSpace(pjRepos))
             {
                 return Vector3.Up;
             }
+            Vector3 XZ = new Vector3(1,0,1);
             Vector3 p1 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
-            Vector3 p3 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
-            Vector3 p2;
-            Vector2 _p1 = new Vector2(MathF.Floor(pjRepos.X), MathF.Ceiling(pjRepos.Z));
-            Vector2 _p2 = new Vector2(MathF.Ceiling(pjRepos.X), MathF.Floor(pjRepos.Z));
-            Vector2 _pj = new Vector2(pjRepos.X, pjRepos.Z);
-            if (Vector2.Distance(_p1, _pj) < Vector2.Distance(_p2, _pj))
-                p2 = points[(int)_p1.X, (int)_p1.Y].position;
-            else
-                p2 = points[(int)_p2.X, (int)_p2.Y].position;
-            return MathC.NormalWith3Points(p1, p2, p3);
+            Vector3 p2 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
+            Vector3 p3 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
+            Vector3 p4 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
+            if (!TakeOtherTriangles(p1, p2, p3, p4))
+            {
+                if (Vector3.Distance(p3 * XZ, pj * XZ) < Vector3.Distance(p4 * XZ, pj * XZ))
+                    return MathC.NormalWith3Points(p1, p2, p3);
+                else
+                    return MathC.NormalWith3Points(p1, p4, p2);
+            } else
+            {
+                if (Vector3.Distance(p1 * XZ, pj * XZ) < Vector3.Distance(p2 * XZ, pj * XZ))
+                    return MathC.NormalWith3Points(p3, p1, p4);
+                else
+                    return MathC.NormalWith3Points(p3, p4, p2);
+            }
+        }
+
+        private bool PlayerOutOfWorldSpace(Vector3 position)
+        {
+            return !MathC.BetweenValuesIncluded(position.X, 0, worldSize * chunkSize) ||
+                   !MathC.BetweenValuesIncluded(position.Z, 0, worldSize * chunkSize);
         }
 
 
@@ -289,13 +362,17 @@ namespace SurvivalGame.Elements
     public class Biome
     {
         public Color color;
+        public int minHigh;
+        public int maxHigh;
 
-        public Biome(Color color)
+        public Biome(Color color, int minHigh, int maxHigh)
         {
             this.color = color;
+            this.minHigh = minHigh;
+            this.maxHigh = maxHigh;
         }
 
-        public static Biome Llanura = new Biome(Color.Green);
+        public static Biome Llanura = new Biome(Color.Green, -1, 1);
 
     }
 }
