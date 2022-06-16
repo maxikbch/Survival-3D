@@ -13,16 +13,15 @@ namespace SurvivalGame.Elements
     
     public class World
     {
-        int chunkSize = 9;
-        int worldSize;
+        public int chunkSize = 9;
+        public int worldSize;
         int worldRadio = 4; //MantenerImparidad
         int visionRange = 2; //RangoDeChunks
         float centration = 0;
         Chunk[,] chunks;
         Vector2 center;
-        public WorldPoint[,] points;
+        public ColorPoint[,] points;
         public Vector3 to000;
-        public float floorScale = 1f;
 
 
         public World()
@@ -33,6 +32,7 @@ namespace SurvivalGame.Elements
             InitChunks();
             InitWorldPoints();
             SetChunkTriangles();
+            FinalChunkGeneration();
         }
 
         public void InitChunks()
@@ -65,7 +65,7 @@ namespace SurvivalGame.Elements
 
         public void InitWorldPoints()
         {
-            points = new WorldPoint[chunkSize * worldSize + 1, chunkSize * worldSize + 1];
+            points = new ColorPoint[chunkSize * worldSize + 1, chunkSize * worldSize + 1];
 
             int[,] highs = GetPointHighsMatrix();
 
@@ -76,7 +76,7 @@ namespace SurvivalGame.Elements
                     float y = highs[i, j];
                     float x = i - to000.X;
                     float z = j - to000.X;
-                    points[i, j] = new WorldPoint(new Vector3(x, y - 1, z), Color.Green);
+                    points[i, j] = new ColorPoint(new Vector3(x, y - 1, z), Color.Green);
                 }
             }
 
@@ -163,9 +163,21 @@ namespace SurvivalGame.Elements
 
         }
 
-        private WorldPoint[,] GetChunkPoints(int x, int y)
+        public void FinalChunkGeneration()
         {
-            WorldPoint[,] _points = new WorldPoint[chunkSize + 1, chunkSize + 1];
+            for (int i = 0; i < worldSize; i++)
+            {
+                for (int j = 0; j < worldSize; j++)
+                {
+                    chunks[i, j].GenerateAmbient(this, new Vector2(i, j) * chunkSize);
+                }
+            }
+
+        }
+
+        private ColorPoint[,] GetChunkPoints(int x, int y)
+        {
+            ColorPoint[,] _points = new ColorPoint[chunkSize + 1, chunkSize + 1];
             for (int i = 0; i < chunkSize + 1; i++)
             {
                 for (int j = 0; j < chunkSize + 1; j++)
@@ -176,7 +188,7 @@ namespace SurvivalGame.Elements
             return _points;
         }
 
-        private TrianglePrimitive[] GenerateTrianglesFromMatrix(WorldPoint[,] _points)
+        private TrianglePrimitive[] GenerateTrianglesFromMatrix(ColorPoint[,] _points)
         {
             List<TrianglePrimitive> _triangles = new List<TrianglePrimitive>();
             for (int i = 0; i < chunkSize; i++)
@@ -196,31 +208,21 @@ namespace SurvivalGame.Elements
             return false;
         }
 
-        private List<TrianglePrimitive> GenerateQuad(WorldPoint p1, WorldPoint p2, WorldPoint p3, WorldPoint p4)
+        private List<TrianglePrimitive> GenerateQuad(ColorPoint p1, ColorPoint p2, ColorPoint p3, ColorPoint p4)
         {
             List<TrianglePrimitive> _triangles = new List<TrianglePrimitive>();
             if (!TakeOtherTriangles(p1.position, p2.position, p3.position, p4.position))
             {
-                _triangles.Add(GenerateTriangle(p1,p2,p3));
-                _triangles.Add(GenerateTriangle(p1,p4,p2));
+                _triangles.Add(DrawGeometry.Triangle(p1, p2, p3));
+                _triangles.Add(DrawGeometry.Triangle(p1, p4, p2));
             }
             else
             {
-                _triangles.Add(GenerateTriangle(p3,p4,p2));
-                _triangles.Add(GenerateTriangle(p3,p1,p4));
+                _triangles.Add(DrawGeometry.Triangle(p3, p4, p2));
+                _triangles.Add(DrawGeometry.Triangle(p3, p1, p4));
             }
             return _triangles;
         }
-
-        public TrianglePrimitive GenerateTriangle(WorldPoint a, WorldPoint b, WorldPoint c)
-        {
-            GraphicsDevice graphicsDevice = SElem.graphicsDevice;
-            ContentManager content = SElem.content;
-            return new TrianglePrimitive(graphicsDevice, content,
-                a.position, b.position, c.position,
-                a.color, b.color, c.color);
-        }
-
 
         public void Update(GameTime gameTime, Vector3 playerPosition)
         {
@@ -299,6 +301,21 @@ namespace SurvivalGame.Elements
             }
         }
 
+        public bool IsPlane(Vector3 pj)
+        {
+            Vector3 pjRepos = pj;
+            
+            Vector3 p1 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
+            Vector3 p2 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
+            Vector3 p3 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
+            Vector3 p4 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
+            
+            return MathC.NormalWith3Points(p1, p2, p3) == Vector3.Up &&
+                MathC.NormalWith3Points(p1, p4, p2) == Vector3.Up &&
+                MathC.NormalWith3Points(p3, p1, p4) == Vector3.Up &&
+                MathC.NormalWith3Points(p3, p4, p2) == Vector3.Up;
+        }
+
         private bool PlayerOutOfWorldSpace(Vector3 position)
         {
             return !MathC.BetweenValuesIncluded(position.X, 0, worldSize * chunkSize) ||
@@ -324,10 +341,38 @@ namespace SurvivalGame.Elements
         public TrianglePrimitive[] triangles;
         public Biome biome = Biome.Llanura;
         public int high;
+        public AmbientObject[] ambientObjects = { };
 
         public Chunk(int chunkSize)
         {
             triangles = new TrianglePrimitive[(int)Math.Pow(chunkSize - 1, 2) * 2];
+        }
+
+        public void GenerateAmbient(World world, Vector2 position)
+        {
+            float amount = MathC.IntRandom(0, 3);
+            int size = world.chunkSize - 1;
+            List<AmbientObject> objects = new List<AmbientObject>();
+            List<Vector3> usedPositions = new List<Vector3>();
+
+            for(int i = 0; i < amount; i++)
+            {
+                Vector3 pos;
+                bool notUsed;
+                bool validPosition;
+                do {
+                    float X = MathC.IntRandom(0, world.chunkSize - 1) + position.X + 0.5f;
+                    float Z = MathC.IntRandom(0, world.chunkSize - 1) + position.Y + 0.5f;
+                    float Y = world.GetFloorHigh(new Vector3(X, 0, Z) - world.to000);
+                    pos = new Vector3(X, Y, Z);
+                    notUsed = !usedPositions.Exists(position => position == pos);
+                    validPosition = world.IsPlane(pos - Vector3.One * 0.1f);
+                } while (!notUsed && !validPosition);
+
+                objects.Add(biome.elements[MathC.IntRandom(0, biome.elements.Length -1)].New(pos - world.to000));
+            }
+
+            ambientObjects = objects.ToArray();
         }
 
         public void Update(GameTime gameTime)
@@ -342,19 +387,10 @@ namespace SurvivalGame.Elements
             {
                 triangle.Draw(world, view, projection);
             }
-        }
-
-    }
-
-    public class WorldPoint
-    {
-        public Vector3 position;
-        public Color color;
-
-        public WorldPoint(Vector3 position, Color color)
-        {
-            this.position = position;
-            this.color = color;
+            foreach(AmbientObject ambientObject in ambientObjects)
+            {
+                ambientObject.Draw(view, projection);
+            }
         }
 
     }
@@ -364,15 +400,19 @@ namespace SurvivalGame.Elements
         public Color color;
         public int minHigh;
         public int maxHigh;
+        public AmbientObject[] elements;
 
-        public Biome(Color color, int minHigh, int maxHigh)
+        public Biome(Color color, int minHigh, int maxHigh, AmbientObject[] elements)
         {
             this.color = color;
             this.minHigh = minHigh;
             this.maxHigh = maxHigh;
+            this.elements = elements;
         }
 
-        public static Biome Llanura = new Biome(Color.Green, -1, 1);
+        public static Biome Llanura = new Biome(Color.Green, -1, 1,
+            new AmbientObject[]{new Tree()}
+            );
 
     }
 }

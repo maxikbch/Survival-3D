@@ -72,7 +72,7 @@ namespace SurvivalGame
             return n;
         }
 
-        public static float FloatRandom(float max = 1)
+        public static float FloatRandom(float max)
         {
             Random rnd = new Random();
             float value = (float)rnd.NextDouble();
@@ -86,7 +86,7 @@ namespace SurvivalGame
             return value * (max - min) + min;
         }
 
-        public static int IntRandom(int max = 1)
+        public static int IntRandom(int max)
         {
             Random rnd = new Random();
             int value = rnd.Next(0, max + 1);
@@ -98,6 +98,13 @@ namespace SurvivalGame
             Random rnd = new Random();
             int value = rnd.Next(min, max + 1);
             return value;
+        }
+
+        public static bool BoolRandom()
+        {
+            int value = IntRandom();
+            if (value == 1) return true;
+            return false;
         }
 
     }

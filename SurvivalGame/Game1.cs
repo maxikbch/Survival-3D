@@ -17,6 +17,9 @@ namespace SurvivalGame
         //Camara
 
         private Camera Camera;
+
+        private TargetCamera ShadowCamera;
+
         private Point screenSize { get; set; }
 
         //Matrices
@@ -28,6 +31,16 @@ namespace SurvivalGame
         //Shader
 
         private Effect Effect { get; set; }
+
+        private Vector3 LightPosition = new Vector3(250, 250, 0);
+
+        private readonly float ShadowCameraFarPlaneDistance = 3000f;
+
+        private readonly float ShadowCameraNearPlaneDistance = 5f;
+
+        private const int ShadowmapSize = 2048;
+
+        private RenderTarget2D ShadowMapRenderTarget;
 
         //GameInstance
 
@@ -52,6 +65,10 @@ namespace SurvivalGame
             
             Camera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0, 2, 0));
 
+            ShadowCamera = new TargetCamera(1f, LightPosition, Vector3.Zero);
+            ShadowCamera.BuildProjection(1f, ShadowCameraNearPlaneDistance, ShadowCameraFarPlaneDistance,
+                MathHelper.PiOver2);
+
             SElem.effect = Effect;
             SElem.content = Content;
             SElem.graphicsDevice = GraphicsDevice;
@@ -74,7 +91,10 @@ namespace SurvivalGame
 
             Effect = Content.Load<Effect>(ShadersFolder + "ShaderBlingPhong");
 
-            Effect.Parameters["lightPosition"].SetValue(new Vector3(250, 250, 0));
+            Effect.Parameters["lightPosition"].SetValue(LightPosition);
+
+            ShadowMapRenderTarget = new RenderTarget2D(GraphicsDevice, ShadowmapSize, ShadowmapSize, false,
+                SurfaceFormat.Single, DepthFormat.Depth24, 0, RenderTargetUsage.PlatformContents);
 
             Effect.Parameters["ambientColor"].SetValue(Color.White.ToVector3());
             Effect.Parameters["diffuseColor"].SetValue(Color.White.ToVector3());
