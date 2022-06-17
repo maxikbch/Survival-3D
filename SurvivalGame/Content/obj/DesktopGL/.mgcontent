@@ -6,12 +6,14 @@
   <SourceFiles>
     <File>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/Shaders/BasicShader.fx</File>
     <File>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/Shaders/ShaderBlingPhong.fx</File>
+    <File>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/Shaders/ShaderGod.fx</File>
     <File>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/Shaders/SkyBox.fx</File>
     <File>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/SpriteFonts/Arial.spritefont</File>
     <File>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/SpriteFonts/Cascadia/CascadiaCodePL.spritefont</File>
     <File>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/SpriteFonts/Cascadia/CascadiaMonoPL.spritefont</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />

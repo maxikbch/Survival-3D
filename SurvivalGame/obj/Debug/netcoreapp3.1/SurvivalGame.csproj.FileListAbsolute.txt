@@ -28,3 +28,4 @@ E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\bin\Debug\netcoreapp3.1
 E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\bin\Debug\netcoreapp3.1\Content\SpriteFonts\Arial.xnb
 E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\bin\Debug\netcoreapp3.1\Content\SpriteFonts\Cascadia\CascadiaCodePL.xnb
 E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\bin\Debug\netcoreapp3.1\Content\SpriteFonts\Cascadia\CascadiaMonoPL.xnb
+E:\El Baul De Maxo\Programar\C#\Survival-3D\SurvivalGame\bin\Debug\netcoreapp3.1\Content\Shaders\ShaderGod.xnb

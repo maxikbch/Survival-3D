@@ -3,7 +3,7 @@
   <SourceFile>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/Shaders/SkyBox.fx</SourceFile>
   <SourceTime>2022-05-13T22:30:21.6049692-03:00</SourceTime>
   <DestFile>E:/El Baul De Maxo/Programar/C#/Survival-3D/SurvivalGame/Content/bin/DesktopGL/Shaders/SkyBox.xnb</DestFile>
-  <DestTime>2022-06-13T17:51:49.7482733-03:00</DestTime>
+  <DestTime>2022-06-16T22:21:47.7367424-03:00</DestTime>
   <Importer>EffectImporter</Importer>
   <ImporterTime>2020-08-10T13:17:54-03:00</ImporterTime>
   <Processor>EffectProcessor</Processor>

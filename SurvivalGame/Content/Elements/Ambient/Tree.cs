@@ -14,6 +14,7 @@ namespace SurvivalGame.Elements
     public class AmbientObject
     {
         public Vector3 position;
+        public Matrix world;
 
         public virtual void Update(GameTime gameTime)
         {
@@ -135,7 +136,7 @@ namespace SurvivalGame.Elements
 
         public override void Draw(Matrix view, Matrix projection)
         {
-            Matrix world = Matrix.CreateTranslation(position);
+            world = Matrix.CreateTranslation(position);
             List<TrianglePrimitive> triangles = new List<TrianglePrimitive>();
             triangles.AddRange(baseLog);
             triangles.AddRange(topLog);

@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SurvivalGame.Cameras;
 using SurvivalGame.Geometries;
+using System.Collections.Generic;
 
 namespace SurvivalGame
 {
@@ -89,21 +90,21 @@ namespace SurvivalGame
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            Effect = Content.Load<Effect>(ShadersFolder + "ShaderBlingPhong");
+            Effect = Content.Load<Effect>(ShadersFolder + "ShaderGod");
 
-            Effect.Parameters["lightPosition"].SetValue(LightPosition);
+            Effect.Parameters["lightPosition"]?.SetValue(LightPosition);
 
             ShadowMapRenderTarget = new RenderTarget2D(GraphicsDevice, ShadowmapSize, ShadowmapSize, false,
                 SurfaceFormat.Single, DepthFormat.Depth24, 0, RenderTargetUsage.PlatformContents);
 
-            Effect.Parameters["ambientColor"].SetValue(Color.White.ToVector3());
-            Effect.Parameters["diffuseColor"].SetValue(Color.White.ToVector3());
-            Effect.Parameters["specularColor"].SetValue(Color.White.ToVector3());
+            Effect.Parameters["ambientColor"]?.SetValue(Color.White.ToVector3());
+            Effect.Parameters["diffuseColor"]?.SetValue(Color.White.ToVector3());
+            Effect.Parameters["specularColor"]?.SetValue(Color.White.ToVector3());
 
-            Effect.Parameters["KAmbient"].SetValue(0.65f);
-            Effect.Parameters["KDiffuse"].SetValue(0.4f);
-            Effect.Parameters["KSpecular"].SetValue(0.15f);
-            Effect.Parameters["shininess"].SetValue(1f);
+            Effect.Parameters["KAmbient"]?.SetValue(0.65f);
+            Effect.Parameters["KDiffuse"]?.SetValue(0.4f);
+            Effect.Parameters["KSpecular"]?.SetValue(0.15f);
+            Effect.Parameters["shininess"]?.SetValue(1f);
 
 
             // TODO: use this.Content to load your game content here
@@ -118,6 +119,9 @@ namespace SurvivalGame
             Camera.UpdatePlayerPosition(game.player.position);
             Camera.Update(gameTime);
 
+            ShadowCamera.Position = LightPosition;
+            ShadowCamera.BuildView();
+
             game.player.Update(gameTime, Camera.FrontDirection, Camera.RightDirection);
             game.player.UpdateY(game.world.GetFloorHigh(game.player.position), game.world.GetFloorNormal(game.player.position));
 
@@ -130,15 +134,34 @@ namespace SurvivalGame
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
 
             GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
+            //Seteamos render target en el shadowmap
+            GraphicsDevice.SetRenderTarget(ShadowMapRenderTarget);
+            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
+
+            //Effect.CurrentTechnique = Effect.Techniques["DepthPass"];
+
+            //Dibujamos en el shadowmap
+            game.world.Draw(GraphicsDevice, Content, ShadowCamera.View, ShadowCamera.Projection);
+
+            game.player.Draw(ShadowCamera.View, ShadowCamera.Projection);
+
+            //Seteamos el render target en null para dibujar directamente en la pantalla
+            GraphicsDevice.SetRenderTarget(null);
+            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.CornflowerBlue, 1f, 0);
+
             // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
+            //Effect.CurrentTechnique = Effect.Techniques["DrawShadowedPCF"];
             Effect.Parameters["View"].SetValue(Camera.View);
             Effect.Parameters["Projection"].SetValue(Camera.Projection);
-            Effect.Parameters["eyePosition"].SetValue(Camera.Position);
+            Effect.Parameters["eyePosition"]?.SetValue(Camera.Position);
+            Effect.Parameters["lightPosition"]?.SetValue(LightPosition);
+            Effect.Parameters["shadowMapSize"]?.SetValue(Vector2.One * ShadowmapSize);
+            Effect.Parameters["shadowMap"]?.SetValue(ShadowMapRenderTarget);
+            Effect.Parameters["LightViewProjection"]?.SetValue(ShadowCamera.View * ShadowCamera.Projection);
 
             // TODO: Add your drawing code here
             game.world.Draw(GraphicsDevice, Content, Camera.View, Camera.Projection);
@@ -153,5 +176,11 @@ namespace SurvivalGame
 
             base.Draw(gameTime);
         }
+
+        private void DrawShadows(GameTime gameTime)
+        {
+            
+        }
+
     }
 }
