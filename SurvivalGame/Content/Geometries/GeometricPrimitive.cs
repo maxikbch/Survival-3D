@@ -91,7 +91,7 @@ namespace SurvivalGame.Geometries
             IndexBuffer.SetData(Indices.ToArray());
 
             // Create a BasicEffect, which will be used to render the primitive.
-            Effect = content.Load<Effect>("Shaders/ShaderBlingPhong");
+            Effect = content.Load<Effect>(SElem.effectDirectory);
             //Effect.VertexColorEnabled = true;
             //Effect.EnableDefaultLighting();
         }

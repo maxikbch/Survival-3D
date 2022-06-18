@@ -9,6 +9,7 @@ namespace SurvivalGame
 {
     public class SElem
     {
+        public static string effectDirectory;
         public static Effect effect;
         public static GraphicsDevice graphicsDevice;
         public static ContentManager content;

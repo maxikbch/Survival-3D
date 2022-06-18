@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SurvivalGame.Cameras;
 using SurvivalGame.Geometries;
+using System;
 using System.Collections.Generic;
 
 namespace SurvivalGame
@@ -33,7 +34,7 @@ namespace SurvivalGame
 
         private Effect Effect { get; set; }
 
-        private Vector3 LightPosition = new Vector3(250, 250, 0);
+        private Vector3 LightPosition = new Vector3(0, 5, 0);
 
         private readonly float ShadowCameraFarPlaneDistance = 3000f;
 
@@ -70,6 +71,8 @@ namespace SurvivalGame
             ShadowCamera.BuildProjection(1f, ShadowCameraNearPlaneDistance, ShadowCameraFarPlaneDistance,
                 MathHelper.PiOver2);
 
+
+            SElem.effectDirectory = ShadersFolder + "ShaderGod";
             SElem.effect = Effect;
             SElem.content = Content;
             SElem.graphicsDevice = GraphicsDevice;
@@ -90,7 +93,7 @@ namespace SurvivalGame
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            Effect = Content.Load<Effect>(ShadersFolder + "ShaderGod");
+            Effect = Content.Load<Effect>(SElem.effectDirectory);
 
             Effect.Parameters["lightPosition"]?.SetValue(LightPosition);
 
@@ -119,7 +122,7 @@ namespace SurvivalGame
             Camera.UpdatePlayerPosition(game.player.position);
             Camera.Update(gameTime);
 
-            ShadowCamera.Position = LightPosition;
+            ShadowCamera.Position = LightPosition + game.player.position;
             ShadowCamera.BuildView();
 
             game.player.Update(gameTime, Camera.FrontDirection, Camera.RightDirection);
@@ -134,15 +137,14 @@ namespace SurvivalGame
 
         protected override void Draw(GameTime gameTime)
         {
-
-            GraphicsDevice.RasterizerState = new RasterizerState { CullMode = CullMode.None };
+            GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
             //Seteamos render target en el shadowmap
             GraphicsDevice.SetRenderTarget(ShadowMapRenderTarget);
             GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
 
-            //Effect.CurrentTechnique = Effect.Techniques["DepthPass"];
+            Effect.CurrentTechnique = Effect.Techniques["DepthPass"];
 
             //Dibujamos en el shadowmap
             game.world.Draw(GraphicsDevice, Content, ShadowCamera.View, ShadowCamera.Projection);
@@ -155,10 +157,11 @@ namespace SurvivalGame
 
             // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
             //Effect.CurrentTechnique = Effect.Techniques["DrawShadowedPCF"];
+            Effect.CurrentTechnique = Effect.Techniques["BasicColorDrawing"];
             Effect.Parameters["View"].SetValue(Camera.View);
             Effect.Parameters["Projection"].SetValue(Camera.Projection);
             Effect.Parameters["eyePosition"]?.SetValue(Camera.Position);
-            Effect.Parameters["lightPosition"]?.SetValue(LightPosition);
+            Effect.Parameters["lightPosition"]?.SetValue(LightPosition + game.player.position);
             Effect.Parameters["shadowMapSize"]?.SetValue(Vector2.One * ShadowmapSize);
             Effect.Parameters["shadowMap"]?.SetValue(ShadowMapRenderTarget);
             Effect.Parameters["LightViewProjection"]?.SetValue(ShadowCamera.View * ShadowCamera.Projection);
@@ -169,7 +172,10 @@ namespace SurvivalGame
             game.player.Draw(Camera.View, Camera.Projection);
 
             Vector3 normal = game.world.GetFloorNormal(game.player.position);
-            string txt = "Normal: {" + normal.X + ";" + normal.Y + ";" + normal.Z + "}";
+            Vector3 position = game.player.position;
+            position = new Vector3(MathF.Round(position.X), MathF.Round(position.Y), MathF.Round(position.Z));
+            //string txt = "Normal: {" + normal.X + ";" + normal.Y + ";" + normal.Z + "}";
+            string txt = "Posicion: {" + position.X + ";" + position.Y + ";" + position.Z + "}";
             string txt2 = "";
             Text.DrawTextFromCenter(txt, 0, -200, 1f, Color.Red, SElem.fontA);
             Text.DrawTextFromCenter(txt2, 0, -225, 1f, Color.Red, SElem.fontA);
