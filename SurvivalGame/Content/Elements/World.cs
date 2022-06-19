@@ -254,7 +254,6 @@ namespace SurvivalGame.Elements
             {
                 return 0;
             }
-            Vector3 XZ = new Vector3(1, 0, 1);
             Vector3 p1 = points[(int)MathF.Floor(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;
             Vector3 p2 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Ceiling(pjRepos.Z)].position;
             Vector3 p3 = points[(int)MathF.Ceiling(pjRepos.X), (int)MathF.Floor(pjRepos.Z)].position;

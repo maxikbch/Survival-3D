@@ -34,13 +34,13 @@ namespace SurvivalGame
 
         private Effect Effect { get; set; }
 
-        private Vector3 LightPosition = new Vector3(0, 5, 0);
+        private Vector3 LightPosition = new Vector3(1, 1, 1) * 50;
 
         private readonly float ShadowCameraFarPlaneDistance = 3000f;
 
         private readonly float ShadowCameraNearPlaneDistance = 5f;
 
-        private const int ShadowmapSize = 2048;
+        private const int ShadowmapSize = 4096;
 
         private RenderTarget2D ShadowMapRenderTarget;
 
@@ -122,7 +122,7 @@ namespace SurvivalGame
             Camera.UpdatePlayerPosition(game.player.position);
             Camera.Update(gameTime);
 
-            ShadowCamera.Position = LightPosition + game.player.position;
+            ShadowCamera.Position = LightPosition;
             ShadowCamera.BuildView();
 
             game.player.Update(gameTime, Camera.FrontDirection, Camera.RightDirection);
@@ -139,6 +139,9 @@ namespace SurvivalGame
         {
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+            Effect.Parameters["View"].SetValue(ShadowCamera.View);
+            Effect.Parameters["Projection"].SetValue(ShadowCamera.Projection);
 
             //Seteamos render target en el shadowmap
             GraphicsDevice.SetRenderTarget(ShadowMapRenderTarget);
@@ -161,7 +164,7 @@ namespace SurvivalGame
             Effect.Parameters["View"].SetValue(Camera.View);
             Effect.Parameters["Projection"].SetValue(Camera.Projection);
             Effect.Parameters["eyePosition"]?.SetValue(Camera.Position);
-            Effect.Parameters["lightPosition"]?.SetValue(LightPosition + game.player.position);
+            Effect.Parameters["lightPosition"]?.SetValue(LightPosition);
             Effect.Parameters["shadowMapSize"]?.SetValue(Vector2.One * ShadowmapSize);
             Effect.Parameters["shadowMap"]?.SetValue(ShadowMapRenderTarget);
             Effect.Parameters["LightViewProjection"]?.SetValue(ShadowCamera.View * ShadowCamera.Projection);

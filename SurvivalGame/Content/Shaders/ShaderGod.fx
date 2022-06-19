@@ -193,7 +193,6 @@ float4 Shadows(VertexShaderOutput input, float4 color)
             notInShadow += step(lightSpacePosition.z, pcfDepth) / 9.0;
         }
 	
-    //float4 baseColor = tex2D(textureSampler, input.TextureCoordinates);
     float4 baseColor = color;
     baseColor.rgb *= 0.5 + 0.5 * notInShadow;
     return baseColor;
@@ -203,6 +202,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float4 finalColor;
     finalColor = BlingPhong(input);
+    finalColor = float4(1.0, 1.0, 1.0, 1.0);
     finalColor = Shadows(input, finalColor);
     return finalColor;
 }
@@ -210,7 +210,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 DepthPassVertexShaderOutput DepthVS(in DepthPassVertexShaderInput input)
 {
     DepthPassVertexShaderOutput output;
-    float4x4 WorldViewProjection = World * View * Projection;
+    float4x4 WorldViewProjection = mul(mul(World, View), Projection);
     output.Position = mul(input.Position, WorldViewProjection);
     output.ScreenSpacePosition = mul(input.Position, WorldViewProjection);
     return output;
