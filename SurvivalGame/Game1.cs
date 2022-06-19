@@ -34,13 +34,15 @@ namespace SurvivalGame
 
         private Effect Effect { get; set; }
 
-        private Vector3 LightPosition = new Vector3(1, 1, 1) * 50;
+        private Vector3 LightAngle = new Vector3(1, 1, 0);
+        private float LightDistance = 50;
+        private Vector3 LightPosition;
 
         private readonly float ShadowCameraFarPlaneDistance = 3000f;
 
         private readonly float ShadowCameraNearPlaneDistance = 5f;
 
-        private const int ShadowmapSize = 4096;
+        private const int ShadowmapSize = 1024 * 20;
 
         private RenderTarget2D ShadowMapRenderTarget;
 
@@ -67,7 +69,7 @@ namespace SurvivalGame
             
             Camera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio, new Vector3(0, 2, 0));
 
-            ShadowCamera = new TargetCamera(1f, LightPosition, Vector3.Zero);
+            ShadowCamera = new TargetCamera(1f, LightAngle * LightDistance, Vector3.Zero);
             ShadowCamera.BuildProjection(1f, ShadowCameraNearPlaneDistance, ShadowCameraFarPlaneDistance,
                 MathHelper.PiOver2);
 
@@ -95,7 +97,7 @@ namespace SurvivalGame
 
             Effect = Content.Load<Effect>(SElem.effectDirectory);
 
-            Effect.Parameters["lightPosition"]?.SetValue(LightPosition);
+            Effect.Parameters["lightPosition"]?.SetValue(LightAngle * LightDistance);
 
             ShadowMapRenderTarget = new RenderTarget2D(GraphicsDevice, ShadowmapSize, ShadowmapSize, false,
                 SurfaceFormat.Single, DepthFormat.Depth24, 0, RenderTargetUsage.PlatformContents);
@@ -116,6 +118,11 @@ namespace SurvivalGame
         protected override void Update(GameTime gameTime)
         {
             //GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
+
+            //GameTimeCicle(GameTime gameTime);
+
+            LightPosition = LightAngle * LightDistance + game.player.position;
+
             if (Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
@@ -189,6 +196,25 @@ namespace SurvivalGame
         private void DrawShadows(GameTime gameTime)
         {
             
+        }
+
+        private void GameTimeCicle(GameTime gameTime)
+        {
+            float time = (float)gameTime.TotalGameTime.TotalSeconds / 2;
+            LightAngle = new Vector3(MathF.Cos(time), MathF.Sin(time), 0);
+            if (MathF.Sin(time) >= 0)
+            {
+                Effect.Parameters["ambientColor"]?.SetValue(Color.White.ToVector3());
+                Effect.Parameters["diffuseColor"]?.SetValue(Color.White.ToVector3());
+                Effect.Parameters["specularColor"]?.SetValue(Color.White.ToVector3());
+            }
+            else
+            {
+                LightAngle *= -1;
+                Effect.Parameters["ambientColor"]?.SetValue(Color.DarkBlue.ToVector3());
+                Effect.Parameters["diffuseColor"]?.SetValue(Color.DarkBlue.ToVector3());
+                Effect.Parameters["specularColor"]?.SetValue(Color.DarkBlue.ToVector3());
+            }
         }
 
     }

@@ -201,8 +201,9 @@ float4 Shadows(VertexShaderOutput input, float4 color)
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float4 finalColor;
+    float4 blanco = float4(1.0, 1.0, 1.0, 1.0); //un blanco que uso para testear cosas
     finalColor = BlingPhong(input);
-    finalColor = float4(1.0, 1.0, 1.0, 1.0);
+    //finalColor = blanco;
     finalColor = Shadows(input, finalColor);
     return finalColor;
 }
