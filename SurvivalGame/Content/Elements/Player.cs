@@ -28,13 +28,13 @@ namespace SurvivalGame.Elements
         public void Update(GameTime gameTime, Vector3 frontDirection, Vector3 rightDirection)
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (Keyboard.GetState().IsKeyDown(SKeys.playerMoveForward))
+            if (Keyboard.GetState().IsKeyDown(SKey.playerMoveForward))
                 position += frontDirection * deltaTime * playerSpeed;
-            if (Keyboard.GetState().IsKeyDown(SKeys.playerMoveBackward))
+            if (Keyboard.GetState().IsKeyDown(SKey.playerMoveBackward))
                 position -= frontDirection * deltaTime * playerSpeed;
-            if (Keyboard.GetState().IsKeyDown(SKeys.playerMoveLeft))
+            if (Keyboard.GetState().IsKeyDown(SKey.playerMoveLeft))
                 position -= rightDirection * deltaTime * playerSpeed;
-            if (Keyboard.GetState().IsKeyDown(SKeys.playerMoveRight))
+            if (Keyboard.GetState().IsKeyDown(SKey.playerMoveRight))
                 position += rightDirection * deltaTime * playerSpeed;
         }
 

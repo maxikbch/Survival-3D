@@ -60,6 +60,9 @@ namespace SurvivalGame
 
         private GameInstance game;
 
+        //xRay
+        private bool xRayOn = false;
+
         //Carpetas
 
         private static string AssetsFolder = "Assets/";
@@ -145,10 +148,15 @@ namespace SurvivalGame
 
             //GameTimeCicle(gameTime);
 
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
             LightPosition = LightAngle * LightDistance + game.player.position;
 
             if (Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            if (SKey.switchXRay.PressedCD(0.2f, deltaTime))
+                xRayOn = MathC.BoolSwitch(xRayOn);
 
             Camera.UpdatePlayerPosition(game.player.position);
             Camera.Update(gameTime);
@@ -163,6 +171,8 @@ namespace SurvivalGame
 
             // TODO: Add your update logic here
 
+
+
             base.Update(gameTime);
         }
 
@@ -171,7 +181,7 @@ namespace SurvivalGame
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-            if (false)
+            if (!xRayOn)
                 DrawWithoutBorders();
             else
                 DrawWithBorders();
@@ -274,7 +284,7 @@ namespace SurvivalGame
 
             // TODO: Add your drawing code here
             game.world.DrawElements(GraphicsDevice, Content, Camera.View, Camera.Projection);
-            game.world.DrawFloor(GraphicsDevice, Content, Camera.View, Camera.Projection);
+            //game.world.DrawFloor(GraphicsDevice, Content, Camera.View, Camera.Projection);
 
             game.player.Draw(Camera.View, Camera.Projection);
 

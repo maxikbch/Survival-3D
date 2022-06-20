@@ -58,12 +58,12 @@ namespace SurvivalGame.Cameras
         {
             var keyboardState = Keyboard.GetState();
 
-            if (keyboardState.IsKeyDown(SKeys.rotateCameraLeft))
+            if (keyboardState.IsKeyDown(SKey.rotateCameraLeft))
             {
                 YaxisAngle += 1f * elapsedTime;
             }
 
-            if (keyboardState.IsKeyDown(SKeys.rotateCameraRight))
+            if (keyboardState.IsKeyDown(SKey.rotateCameraRight))
             {
                 YaxisAngle += -1f * elapsedTime;
             }

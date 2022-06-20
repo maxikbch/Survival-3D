@@ -82,7 +82,7 @@ namespace SurvivalGame.Cameras
                 changed = true;
             }
 
-            if (Keyboard.GetState().IsKeyDown(SKeys.centerFreeCamera))
+            if (Keyboard.GetState().IsKeyDown(SKey.centerFreeCamera))
                 Position *= new Vector3(0, 1, 0);
         }
 

@@ -107,5 +107,11 @@ namespace SurvivalGame
             return false;
         }
 
+        public static bool BoolSwitch(bool input)
+        {
+            if (input) return false;
+            return true;
+        }
+
     }
 }
