@@ -229,7 +229,7 @@ namespace SurvivalGame.Elements
             SetWorldViewCenter(playerPosition);
         }
 
-        public void Draw(GraphicsDevice graphicsDevice, ContentManager content, Matrix view, Matrix projection)
+        public void DrawFloor(GraphicsDevice graphicsDevice, ContentManager content, Matrix view, Matrix projection)
         {
 
             int range = 1 + (visionRange - 1) * 2;
@@ -240,7 +240,24 @@ namespace SurvivalGame.Elements
                 {
                     if (i < worldSize && j < worldSize && i > -1 && j > -1)
                     {
-                        chunks[i, j].Draw(view, projection);
+                        chunks[i, j].DrawFloor(view, projection);
+                    }
+                }
+            }
+        }
+
+        public void DrawElements(GraphicsDevice graphicsDevice, ContentManager content, Matrix view, Matrix projection)
+        {
+
+            int range = 1 + (visionRange - 1) * 2;
+
+            for (int i = (int)center.X - range; i <= (int)center.X + range; i++)
+            {
+                for (int j = (int)center.Y - range; j <= (int)center.Y + range; j++)
+                {
+                    if (i < worldSize && j < worldSize && i > -1 && j > -1)
+                    {
+                        chunks[i, j].DrawElements(view, projection);
                     }
                 }
             }
@@ -379,14 +396,18 @@ namespace SurvivalGame.Elements
 
         }
 
-        public void Draw(Matrix view, Matrix projection)
+        public void DrawFloor(Matrix view, Matrix projection)
         {
             Matrix world = Matrix.CreateTranslation(0, 0, 0);
             foreach (TrianglePrimitive triangle in triangles)
             {
                 triangle.Draw(world, view, projection);
             }
-            foreach(AmbientObject ambientObject in ambientObjects)
+        }
+
+        public void DrawElements(Matrix view, Matrix projection)
+        {
+            foreach (AmbientObject ambientObject in ambientObjects)
             {
                 ambientObject.Draw(view, projection);
             }

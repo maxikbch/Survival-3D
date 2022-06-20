@@ -44,7 +44,17 @@ namespace SurvivalGame
 
         private const int ShadowmapSize = 1024 * 20;
 
+        //Render Targets
+
         private RenderTarget2D ShadowMapRenderTarget;
+
+        private RenderTarget2D ProcesedRenderTarget;
+
+        private RenderTarget2D BorderRenderTarget;
+
+        private RenderTarget2D NormalsRenderTarget;
+
+        private FullScreenQuad FullScreenQuad;
 
         //GameInstance
 
@@ -102,6 +112,18 @@ namespace SurvivalGame
             ShadowMapRenderTarget = new RenderTarget2D(GraphicsDevice, ShadowmapSize, ShadowmapSize, false,
                 SurfaceFormat.Single, DepthFormat.Depth24, 0, RenderTargetUsage.PlatformContents);
 
+            ProcesedRenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width,
+                GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8, 0,
+                RenderTargetUsage.DiscardContents);
+
+            BorderRenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width,
+                GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8, 0,
+                RenderTargetUsage.DiscardContents);
+
+            NormalsRenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width,
+                GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8, 0,
+                RenderTargetUsage.DiscardContents);
+
             Effect.Parameters["ambientColor"]?.SetValue(Color.White.ToVector3());
             Effect.Parameters["diffuseColor"]?.SetValue(Color.White.ToVector3());
             Effect.Parameters["specularColor"]?.SetValue(Color.White.ToVector3());
@@ -111,6 +133,8 @@ namespace SurvivalGame
             Effect.Parameters["KSpecular"]?.SetValue(0.15f);
             Effect.Parameters["shininess"]?.SetValue(1f);
 
+            FullScreenQuad = new FullScreenQuad(GraphicsDevice);
+
 
             // TODO: use this.Content to load your game content here
         }
@@ -119,7 +143,7 @@ namespace SurvivalGame
         {
             //GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
 
-            //GameTimeCicle(GameTime gameTime);
+            //GameTimeCicle(gameTime);
 
             LightPosition = LightAngle * LightDistance + game.player.position;
 
@@ -147,39 +171,11 @@ namespace SurvivalGame
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-            Effect.Parameters["View"].SetValue(ShadowCamera.View);
-            Effect.Parameters["Projection"].SetValue(ShadowCamera.Projection);
+            if (false)
+                DrawWithoutBorders();
+            else
+                DrawWithBorders();
 
-            //Seteamos render target en el shadowmap
-            GraphicsDevice.SetRenderTarget(ShadowMapRenderTarget);
-            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
-
-            Effect.CurrentTechnique = Effect.Techniques["DepthPass"];
-
-            //Dibujamos en el shadowmap
-            game.world.Draw(GraphicsDevice, Content, ShadowCamera.View, ShadowCamera.Projection);
-
-            game.player.Draw(ShadowCamera.View, ShadowCamera.Projection);
-
-            //Seteamos el render target en null para dibujar directamente en la pantalla
-            GraphicsDevice.SetRenderTarget(null);
-            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.CornflowerBlue, 1f, 0);
-
-            // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
-            //Effect.CurrentTechnique = Effect.Techniques["DrawShadowedPCF"];
-            Effect.CurrentTechnique = Effect.Techniques["BasicColorDrawing"];
-            Effect.Parameters["View"].SetValue(Camera.View);
-            Effect.Parameters["Projection"].SetValue(Camera.Projection);
-            Effect.Parameters["eyePosition"]?.SetValue(Camera.Position);
-            Effect.Parameters["lightPosition"]?.SetValue(LightPosition);
-            Effect.Parameters["shadowMapSize"]?.SetValue(Vector2.One * ShadowmapSize);
-            Effect.Parameters["shadowMap"]?.SetValue(ShadowMapRenderTarget);
-            Effect.Parameters["LightViewProjection"]?.SetValue(ShadowCamera.View * ShadowCamera.Projection);
-
-            // TODO: Add your drawing code here
-            game.world.Draw(GraphicsDevice, Content, Camera.View, Camera.Projection);
-
-            game.player.Draw(Camera.View, Camera.Projection);
 
             Vector3 normal = game.world.GetFloorNormal(game.player.position);
             Vector3 position = game.player.position;
@@ -193,10 +189,106 @@ namespace SurvivalGame
             base.Draw(gameTime);
         }
 
-        private void DrawShadows(GameTime gameTime)
+        private void DrawWithBorders() 
         {
-            
+            DrawShadowMap();
+
+            DrawMainRenderTarget(ProcesedRenderTarget);
+
+            DrawBorderRenderTarget();
+
+            //Dibujo los renderTargets en la pantalla
+
+            GraphicsDevice.SetRenderTarget(null);
+            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
+
+            Effect.CurrentTechnique = Effect.Techniques["DrawRenderTargets"];
+
+            Effect.Parameters["borderTexture"]?.SetValue(BorderRenderTarget);
+            Effect.Parameters["procesedTexture"]?.SetValue(ProcesedRenderTarget);
+
+            FullScreenQuad.Draw(Effect);
+
         }
+
+        private void DrawWithoutBorders()
+        {
+            DrawShadowMap();
+
+            DrawMainRenderTarget(null);
+
+        }
+
+        private void DrawShadowMap()
+        {
+            Effect.Parameters["View"].SetValue(ShadowCamera.View);
+            Effect.Parameters["Projection"].SetValue(ShadowCamera.Projection);
+
+            //Seteamos render target en el shadowmap
+            GraphicsDevice.SetRenderTarget(ShadowMapRenderTarget);
+            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
+
+            Effect.CurrentTechnique = Effect.Techniques["DepthPass"];
+
+            //Dibujamos en el shadowmap
+            game.world.DrawFloor(GraphicsDevice, Content, ShadowCamera.View, ShadowCamera.Projection);
+            game.world.DrawElements(GraphicsDevice, Content, ShadowCamera.View, ShadowCamera.Projection);
+
+            game.player.Draw(ShadowCamera.View, ShadowCamera.Projection);
+        }
+
+        private void DrawMainRenderTarget(RenderTarget2D render)
+        {
+            //Seteamos el render target en null para dibujar directamente en la pantalla
+            GraphicsDevice.SetRenderTarget(render);
+            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
+
+            // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
+            //Effect.CurrentTechnique = Effect.Techniques["DrawShadowedPCF"];
+            Effect.CurrentTechnique = Effect.Techniques["BasicColorDrawing"];
+            Effect.Parameters["View"].SetValue(Camera.View);
+            Effect.Parameters["Projection"].SetValue(Camera.Projection);
+            Effect.Parameters["eyePosition"]?.SetValue(Camera.Position);
+            Effect.Parameters["lightPosition"]?.SetValue(LightPosition);
+            Effect.Parameters["shadowMapSize"]?.SetValue(Vector2.One * ShadowmapSize);
+            Effect.Parameters["shadowMap"]?.SetValue(ShadowMapRenderTarget);
+            Effect.Parameters["LightViewProjection"]?.SetValue(ShadowCamera.View * ShadowCamera.Projection);
+
+            // TODO: Add your drawing code here
+            game.world.DrawFloor(GraphicsDevice, Content, Camera.View, Camera.Projection);
+            game.world.DrawElements(GraphicsDevice, Content, Camera.View, Camera.Projection);
+
+            game.player.Draw(Camera.View, Camera.Projection);
+        }
+
+        private void DrawBorderRenderTarget()
+        {
+            //Seteamos el render target en null para dibujar directamente en la pantalla
+            GraphicsDevice.SetRenderTarget(NormalsRenderTarget);
+            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
+
+            // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
+            Effect.CurrentTechnique = Effect.Techniques["DrawNormals"];
+            Effect.Parameters["View"].SetValue(Camera.View);
+            Effect.Parameters["Projection"].SetValue(Camera.Projection);
+
+            // TODO: Add your drawing code here
+            game.world.DrawElements(GraphicsDevice, Content, Camera.View, Camera.Projection);
+            game.world.DrawFloor(GraphicsDevice, Content, Camera.View, Camera.Projection);
+
+            game.player.Draw(Camera.View, Camera.Projection);
+
+            GraphicsDevice.SetRenderTarget(BorderRenderTarget);
+            GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
+
+            Effect.CurrentTechnique = Effect.Techniques["DrawBorders"];
+            Effect.Parameters["normalsTexture"]?.SetValue(NormalsRenderTarget);
+            Effect.Parameters["resolution"]?.SetValue(new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height));
+
+            FullScreenQuad.Draw(Effect);
+
+        }
+
 
         private void GameTimeCicle(GameTime gameTime)
         {

@@ -33,8 +33,8 @@ namespace SurvivalGame
         public static List<TrianglePrimitive> Quad(ColorPoint p1, ColorPoint p2, ColorPoint p3, ColorPoint p4)
         {
             List<TrianglePrimitive> _triangles = new List<TrianglePrimitive>();
-            _triangles.Add(Triangle(p1, p3, p2));
-            _triangles.Add(Triangle(p1, p4, p3));
+            _triangles.Add(Triangle(p1, p2, p3));
+            _triangles.Add(Triangle(p1, p3, p4));
             return _triangles;
         }
 

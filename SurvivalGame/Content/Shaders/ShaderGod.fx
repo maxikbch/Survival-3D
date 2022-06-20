@@ -11,6 +11,7 @@ float4x4 World; // Matriz de mundo
 float4x4 View; // Matriz de vista
 float4x4 Projection; // Matriz de proyeccion
 // float4x4 InverseTransposeWorld; // Usada para la iluminacion
+float2 resolution;
 
 //Los tres colores de la fuente de luz
 float3 ambientColor;
@@ -49,6 +50,36 @@ texture baseTexture;
 sampler2D textureSampler = sampler_state
 {
     Texture = (baseTexture);
+    MagFilter = Linear;
+    MinFilter = Linear;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
+
+texture procesedTexture;
+sampler2D procesedTextureSampler = sampler_state
+{
+    Texture = (procesedTexture);
+    MagFilter = Linear;
+    MinFilter = Linear;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
+
+texture normalsTexture;
+sampler2D normalsTextureSampler = sampler_state
+{
+    Texture = (normalsTexture);
+    MagFilter = Linear;
+    MinFilter = Linear;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
+
+texture borderTexture;
+sampler2D borderTextureSampler = sampler_state
+{
+    Texture = (borderTexture);
     MagFilter = Linear;
     MinFilter = Linear;
     AddressU = Clamp;
@@ -110,6 +141,7 @@ struct VertexShaderOutput
     float4 Normal : TEXCOORD2;
     float4 LightSpacePosition : TEXCOORD3;
     float4 WorldSpacePosition : TEXCOORD4;
+    float3 ViewSpaceNormal : TEXCOORD5;
     float4 Color : COLOR0;
 };
 
@@ -122,6 +154,18 @@ struct DepthPassVertexShaderOutput
 {
     float4 Position : SV_POSITION;
     float4 ScreenSpacePosition : TEXCOORD1;
+};
+
+struct DrawRenderVertexShaderInput
+{
+    float4 Position : POSITION0;
+    float2 TextureCoordinates : TEXCOORD0;
+};
+
+struct DrawRenderVertexShaderOutput
+{
+    float4 Position : SV_POSITION;
+    float2 TextureCoordinates : TEXCOORD0;
 };
 
 VertexShaderOutput MainVS(in VertexShaderInput input)
@@ -138,7 +182,10 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
     output.WorldPosition = worldPosition;
 
     float4x4 inverseTransposeWorld = transpose(inverse(World));
-    output.Normal = mul(input.Normal, inverseTransposeWorld);
+    output.Normal = mul(float4(input.Normal.xyz, 0.0), inverseTransposeWorld);
+    
+    float4 viewSpaceNormal = mul(float4(input.Normal.xyz, 0.0), View);
+    output.ViewSpaceNormal = viewSpaceNormal.xyz;
 	
     output.WorldSpacePosition = mul(input.Position, World);
     
@@ -198,13 +245,59 @@ float4 Shadows(VertexShaderOutput input, float4 color)
     return baseColor;
 }
 
+float4 NormalShader(VertexShaderOutput input)
+{
+    float3 normal = normalize(input.ViewSpaceNormal);
+	
+    float4 baseColor;
+    baseColor = float4(abs(normal.x), normal.y, abs(normal.z), 1.0);
+    return baseColor;
+}
+
+float BorderShader(DrawRenderVertexShaderInput input, float2 direction)
+{
+    float4 baseColor = float4(1.0, 1.0, 1.0, 1.0);
+    float dx = 1.0 / resolution.x * direction.x;
+    float dy = 1.0 / resolution.y * direction.y;
+    
+    float3 center = tex2D(normalsTextureSampler, input.TextureCoordinates);
+    
+    //
+    float3 top = tex2D(normalsTextureSampler, input.TextureCoordinates + float2(0.0, dy));
+    float3 topRight = tex2D(normalsTextureSampler, input.TextureCoordinates + float2(dx, dy));
+    float3 right = tex2D(normalsTextureSampler, input.TextureCoordinates + float2(dx, 0.0));
+    
+    float3 t = center - top;
+    float3 r = center - right;
+    float3 tr = center - topRight;
+    
+    t = abs(t);
+    r = abs(r);
+    tr = abs(tr);
+    
+    float n = 0;
+    n = max(n, t.x);
+    n = max(n, t.y);
+    n = max(n, t.z);
+    n = max(n, r.x);
+    n = max(n, r.y);
+    n = max(n, r.z);
+    n = max(n, tr.x);
+    n = max(n, tr.y);
+    n = max(n, tr.z);
+    
+    return n;
+}
+
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float4 finalColor;
     float4 blanco = float4(1.0, 1.0, 1.0, 1.0); //un blanco que uso para testear cosas
+    float4 negro = float4(0.0, 0.0, 0.0, 1.0); //un negro que uso para testear cosas
     finalColor = BlingPhong(input);
     //finalColor = blanco;
     finalColor = Shadows(input, finalColor);
+    //finalColor = BorderShader(input, finalColor);
     return finalColor;
 }
 
@@ -223,6 +316,47 @@ float4 DepthPS(in DepthPassVertexShaderOutput input) : COLOR
     return float4(depth, depth, depth, 1.0);
 }
 
+DrawRenderVertexShaderOutput DrawRenderVS(in DrawRenderVertexShaderInput input)
+{
+    DrawRenderVertexShaderOutput output;
+    output.Position = input.Position;
+    output.TextureCoordinates = input.TextureCoordinates;
+    return output;
+}
+
+float4 DrawRenderPS(in DrawRenderVertexShaderOutput input) : COLOR
+{
+    float4 procesedColor = tex2D(procesedTextureSampler, input.TextureCoordinates);
+    float4 borderColor = tex2D(borderTextureSampler, input.TextureCoordinates);
+    float4 black = float4(1.0, 1.0, 1.0, 1.0);
+    borderColor = black - borderColor;
+    return procesedColor - borderColor;
+}
+
+float4 DrawNormalsPS(in VertexShaderOutput input) : COLOR
+{
+    float4 finalColor;
+    finalColor = NormalShader(input);
+    return finalColor;
+}
+
+float4 DrawBordersPS(in DrawRenderVertexShaderInput input) : COLOR
+{
+    float4 black = float4(1.0, 1.0, 1.0, 1.0);
+    float4 finalColor = black;
+    float n1 = BorderShader(input, float2(1.0, 1.0));
+    float n2 = BorderShader(input, float2(-1.0, -1.0));
+    n2 = 0; //Comentar esto da unos bordes mas gruesos
+    
+    float n = max(n1, n2);
+    // threshold and scale.
+    n = 1.0 - clamp(clamp((n * 2.0) - 0.8, 0.0, 1.0) * 1.5, 0.0, 1.0);
+
+    finalColor.rgb = finalColor.rgb * (0.1 + 0.9 * n);
+    
+    return finalColor;
+}
+
 technique BasicColorDrawing
 {
     pass Pass0
@@ -238,5 +372,32 @@ technique DepthPass
     {
         VertexShader = compile VS_SHADERMODEL DepthVS();
         PixelShader = compile PS_SHADERMODEL DepthPS();
+    }
+};
+
+technique DrawRenderTargets
+{
+    pass Pass0
+    {
+        VertexShader = compile VS_SHADERMODEL DrawRenderVS();
+        PixelShader = compile PS_SHADERMODEL DrawRenderPS();
+    }
+};
+
+technique DrawBorders
+{
+    pass Pass0
+    {
+        VertexShader = compile VS_SHADERMODEL DrawRenderVS();
+        PixelShader = compile PS_SHADERMODEL DrawBordersPS();
+    }
+};
+
+technique DrawNormals
+{
+    pass Pass0
+    {
+        VertexShader = compile VS_SHADERMODEL MainVS();
+        PixelShader = compile PS_SHADERMODEL DrawNormalsPS();
     }
 };
